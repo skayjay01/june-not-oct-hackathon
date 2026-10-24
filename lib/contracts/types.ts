@@ -181,6 +181,8 @@ export interface DigestElement {
 
 export interface DigestSpec {
   version: 1;
+  /** digests.id once saved — sendDigest uses it to build 👍/👎 links (feedback.digest_id) */
+  id?: string;
   brand_id: string;
   date: string; // ISO date
   headline: string;
