@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 import { checkWeights, WEIGHT_DIMENSIONS, type Weights } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
 import { disconnectLicensed, importLicensedCsv, LICENSED_SOURCES, type LicensedKey } from "@/lib/sources/licensed";
@@ -55,4 +56,16 @@ export async function uploadLicensed(brandId: string, key: LicensedKey, _prev: R
 export async function disconnect(brandId: string, key: LicensedKey) {
   await disconnectLicensed(brandId, key);
   refresh();
+}
+
+// Deletes the brand and everything that belongs to it (profile, crawled text, weights, digests,
+// feedback, saved answers, licensed data) via the tables' ON DELETE CASCADE.
+export async function deleteBrand(brandId: string, _prev: Result, form: FormData): Promise<Result> {
+  const { data: brand, error } = await db().from("brands").select("name").eq("id", brandId).maybeSingle();
+  if (error) return { ok: false, message: error.message };
+  if (!brand) return { ok: false, message: "This brand no longer exists." };
+  if (String(form.get("confirm") ?? "").trim() !== brand.name) return { ok: false, message: `Type the brand name exactly to confirm: ${brand.name}` };
+  const { error: delError } = await db().from("brands").delete().eq("id", brandId);
+  if (delError) return { ok: false, message: delError.message };
+  redirect("/");
 }
