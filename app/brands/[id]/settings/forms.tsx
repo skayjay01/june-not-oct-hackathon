@@ -57,9 +57,19 @@ export function DeliveryForm({
   save: (prev: Result, form: FormData) => Promise<Result>;
 }) {
   const [state, action, pending] = useActionState(save, { ok: true, message: "" });
+  const [, start] = useTransition();
   const [channel, setChannel] = useState(initial.channel);
   return (
-    <form action={action} className="flex flex-col gap-4">
+    // onSubmit instead of action={…}: React resets a form after an action runs, which would put back the
+    // saved values after a failed save, so fixing one field and saving again would save stale ones.
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        start(() => action(data));
+      }}
+      className="flex flex-col gap-4"
+    >
       <Field label="Send by" htmlFor="channel">
         <select id="channel" name="channel" value={channel} onChange={(e) => setChannel(e.target.value)} className={inputClass}>
           <option value="email">Email</option>
