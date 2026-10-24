@@ -12,7 +12,7 @@ Owner: Blair. Everything here is data the engine and crawler read; nothing in th
 | C4 demo set | `demo-set.md` | Done. 7 brands after COS was added at 12:10; `lib/engine/demo-plan.ts` has the first 6 and needs COS |
 | C5 presets | `presets.json` | Done. 3 presets, each totaling 100 |
 | C6 evaluation | `../../evals/rubric.md`, `../../evals/scores.csv` | Rubric done. **Scoring not done**: no demo outputs existed at 12:15 |
-| Extra | `editorial-signals.csv`, `brand-weights.json`, `trickle-down.csv` | Done. 137 signals; house weighting v0.3; 15 trickle-down rows |
+| Extra | `editorial-signals.csv`, `brand-weights.json`, `trickle-down.csv` | Done. 145 signals; house weighting v0.3 plus follower brands (COS, Massimo Dutti, Zara); 17 trickle-down rows |
 
 ## What each extra file is for
 
@@ -23,7 +23,6 @@ Owner: Blair. Everything here is data the engine and crawler read; nothing in th
 ## Needed from others
 
 - **Yishan (engine):** add COS to `DEMO_BRANDS` in `lib/engine/demo-plan.ts` as a reference brand (preset `price-sensitive`, tags `minimalist`, `quiet-luxury`, `tailored`, tier mid-premium).
-
 - **Yishan (engine):** nothing in `lib/` reads `editorial-signals.csv`, `brand-weights.json` or `trickle-down.csv` yet. For the demo rankings to reflect the house weighting, the matcher needs to load them (multiply by `results[].weight`). Ask Blair if another shape is easier.
 - **Yizhi (data):** crawl only `stores.csv` rows with `public_product_list = yes`; recheck Cuyana. The migration comments say `colors` stores color *names*, but the contracts use color *ids* (e.g. `cloud-dancer`); worth aligning.
 - **Whoever runs the demo pre-generator:** tell Blair when outputs exist so they can be scored.
