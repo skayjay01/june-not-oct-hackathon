@@ -121,7 +121,8 @@ export function buildEditorialItems(f: CurationFiles): TrendItem[] {
         metrics: {
           house_weight: weightFor(s, cited, weights),
           ...(adoption.has(s.signal_id) ? { adoption: adoption.get(s.signal_id) } : {}),
-          ...(Number.isFinite(n) && /percent_(yoy|market_adoption)/.test(s.unit) ? { growth: n / 100 } : {}),
+          // year-on-year, market adoption and search/Lyst growth ("+4276%") all read as growth
+          ...(Number.isFinite(n) && (/percent_(yoy|market_adoption)/.test(s.unit) || (s.unit === "percent" && /growth|search|lyst/.test(s.signal_kind))) ? { growth: n / 100 } : {}),
           ...(Number.isFinite(n) && /percent_key_influencers/.test(s.unit) ? { search_interest: Math.min(100, n) } : {}),
         },
         evidence: { source_name: s.source_name, brands: cited, reliability: s.reliability, period: s.period, kind: s.signal_kind },

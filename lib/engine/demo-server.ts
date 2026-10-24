@@ -10,9 +10,17 @@ import { engine } from "./index";
 import type { PregenDeps } from "./pregenerate";
 
 /** The real database, crawler and engine behind the demo pre-generator (US-006). */
-export function serverPregenDeps(log: (line: string) => void): PregenDeps {
+export function serverPregenDeps(log: (line: string) => void, opts: { fresh?: boolean } = {}): PregenDeps {
   return {
     log,
+    ...(opts.fresh
+      ? {
+          forget: async (brandId: string, question: string) => {
+            const { error } = await db().from("saved_answers").delete().eq("question_hash", questionHash(brandId, question));
+            if (error) throw error;
+          },
+        }
+      : {}),
     ensureBrand: async (b) => {
       const found = await db().from("brands").select("id").eq("website_url", b.website_url).maybeSingle();
       if (found.error) throw found.error;

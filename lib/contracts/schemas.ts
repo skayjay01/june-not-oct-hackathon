@@ -17,13 +17,14 @@ export const FOCUS = ["color", "silhouette", "material", "pattern", "product", "
 export const questionIntentSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["in_scope", "suggestion", "style_tags", "categories", "colors", "price_min", "price_max", "focus", "emphasis", "time_window_days"],
+  required: ["in_scope", "suggestion", "style_tags", "categories", "colors", "keywords", "price_min", "price_max", "focus", "emphasis", "time_window_days"],
   properties: {
     in_scope: { type: "boolean" },
     suggestion: strOrNull,
     style_tags: strArr,
     categories: strArr,
     colors: strArr,
+    keywords: strArr,
     price_min: numOrNull,
     price_max: numOrNull,
     focus: { type: "string", enum: FOCUS },

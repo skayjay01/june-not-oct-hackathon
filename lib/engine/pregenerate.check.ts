@@ -99,6 +99,14 @@ const main = async () => {
   const noBrand = await pregenerate(DEMO_BRANDS.slice(0, 1), DEMO_QUESTIONS.slice(3, 4), fakeDeps({ ensureBrand: async () => { throw new Error("db down"); } }));
   expect("run: brand creation failure skips its questions", !noBrand.ok && noBrand.questions[0].detail === "brand was not created" && noBrand.brands[0].steps.length === 1);
 
+  // 5. --fresh: the stored answer is dropped before rebuilding, so it is built again rather than replayed.
+  saved.clear();
+  const forgot: string[] = [];
+  const one = DEMO_QUESTIONS.slice(0, 1);
+  await pregenerate(DEMO_BRANDS.filter((b) => b.name === one[0].brand), one, fakeDeps());
+  const fresh = await pregenerate(DEMO_BRANDS.filter((b) => b.name === one[0].brand), one, fakeDeps({ forget: async (id, q) => void (forgot.push(q), saved.delete(`${id}|${q}`)) }));
+  expect("fresh: stored answer dropped, rebuilt, then replayed from cache", forgot.length === 1 && fresh.questions[0].ok && fresh.questions[0].cached, JSON.stringify(fresh.questions[0]));
+
   process.exit(bad ? 1 : 0);
 };
 main();

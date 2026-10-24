@@ -235,7 +235,8 @@ export function runQuery(name: QueryName, params: QueryParams, items: TrendItem[
 
   switch (name) {
     case "top_examples": {
-      const ranked = rankItems(pool.filter((i) => i.type === "product" && matchesKeywords(i, params.keywords) && matchesStyle(i, params.style_tags)), ctx).slice(0, limit);
+      const products = onTopic(pool.filter((i) => i.type === "product" && matchesKeywords(i, params.keywords) && matchesStyle(i, params.style_tags)), ctx, MIN_ON_TOPIC);
+      const ranked = rankItems(products, ctx).slice(0, limit);
       return done(
         ranked.map(({ item, score }) => ({ label: item.title ?? "Untitled", value: Math.round(score * 100), image_url: item.image_url ?? undefined, link: item.link ?? undefined, item_ids: [item.id] })),
         ranked.map((r) => r.item),
@@ -280,7 +281,7 @@ export function runQuery(name: QueryName, params: QueryParams, items: TrendItem[
     }
 
     case "item_count": {
-      const matching = pool.filter((i) => i.type === "product" && matchesKeywords(i, params.keywords) && matchesStyle(i, params.style_tags));
+      const matching = onTopic(pool.filter((i) => i.type === "product" && matchesKeywords(i, params.keywords) && matchesStyle(i, params.style_tags)), ctx, MIN_ON_TOPIC);
       const stores = new Set(matching.map(storeOf).filter(Boolean));
       return done(
         [
@@ -307,12 +308,21 @@ export function runQuery(name: QueryName, params: QueryParams, items: TrendItem[
 
     case "editorial_signals": {
       // runway / Lyst / press facts, ranked with the house weighting; narrowed to the attribute asked about when any match
-      const facts = pool.filter((i) => i.evidence && matchesKeywords(i, params.keywords) && matchesStyle(i, params.style_tags));
+      const facts = pool.filter((i) => i.evidence && matchesKeywords(i, params.keywords));
       const wantType = params.attribute ? ({ colors: "color", material: "fabric", pattern: "pattern" } as const)[params.attribute as "colors"] : undefined;
       const focused = wantType && facts.some((i) => i.type === wantType) ? facts.filter((i) => i.type === wantType) : facts;
-      const ranked = rankItems(focused, ctx).slice(0, limit);
+      // facts naming the question's subject come first, then the strongest of the rest
+      const kws = subjectTerms(ctx.intent);
+      const colors = new Set(ctx.intent?.colors ?? []);
+      const scored = rankItems(focused, ctx).map((r) => ({ ...r, hits: keywordHits(r.item, kws) + ((r.item.attributes.colors ?? []).some((c) => colors.has(c)) ? 1 : 0) }));
+      const maxHits = Math.max(0, ...scored.map((r) => r.hits));
+      // shown value: facts matching more of the subject lead, score breaks ties; bars still read top-down
+      const ranked = scored
+        .map((r) => ({ ...r, value: (r.hits + r.score) / (1 + maxHits) }))
+        .sort((a, b) => b.value - a.value || a.item.id - b.item.id)
+        .slice(0, limit);
       return done(
-        ranked.map(({ item, score }) => ({ label: item.title ?? item.source_item_id, value: Math.round(score * 100), link: item.link ?? undefined, item_ids: [item.id] })),
+        ranked.map(({ item, value }) => ({ label: item.title ?? item.source_item_id, value: Math.round(value * 100), link: item.link ?? undefined, item_ids: [item.id] })),
         ranked.map((r) => r.item),
         "index",
       );
@@ -324,6 +334,55 @@ function attributeValues(i: TrendItem, attr: NonNullable<QueryParams["attribute"
   const v = i.attributes[attr];
   if (attr === "colors" && i.type === "color" && !v?.length) return []; // color items must name a listed color (FR-4)
   return Array.isArray(v) ? v : v ? [v] : [];
+}
+
+/** Fewest on-topic products before example widgets narrow to them. */
+const MIN_ON_TOPIC = 3;
+
+/**
+ * Narrows to items about the question's subject: its keywords or the colors it names. Only when at
+ * least `min` items qualify; otherwise the broader set is kept so the widget isn't empty.
+ */
+function onTopic(items: TrendItem[], ctx: MatchContext, min: number): TrendItem[] {
+  const kws = subjectTerms(ctx.intent);
+  const colors = new Set(ctx.intent?.colors ?? []);
+  if (!kws.length && !colors.size) return items;
+  const hits = items.filter((i) => keywordHits(i, kws) > 0 || (i.attributes.colors ?? []).some((c) => colors.has(c)));
+  if (hits.length >= min) return hits;
+  // named colors with no matching product: unrelated examples would mislead, so the widget is dropped
+  return colors.size && !hits.length ? [] : items;
+}
+
+/** Words that only restate what the question is about ("which prints…") rather than name a subject. */
+const GENERIC = /^(prints?|patterns?|colou?rs?|shades?|fabrics?|materials?|silhouettes?|shapes?|styles?|products?|items?|pieces?)$/;
+
+/** The question's subject words plus its style tags as words ("preppy", "quiet luxury"). */
+function subjectTerms(intent: MatchContext["intent"]): string[] {
+  return [...(intent?.keywords ?? []), ...(intent?.style_tags ?? []).map((t) => t.replace(/-/g, " "))].filter((k) => !GENERIC.test(k.trim().toLowerCase()));
+}
+
+/** Drops common endings so "tailored"/"tailoring" and "caps"/"cap" meet. */
+const base = (w: string) => w.replace(/(ing|ed|es|s)$/, "");
+
+/** Whole-word match after endings: either word may extend the other ("prep" ~ "preppy", "merch" ~ "merchandise"), never a bare 3-letter stub. */
+function wordMatch(kw: string, words: string[]): boolean {
+  const k = base(kw);
+  return words.some((w) => {
+    const t = base(w);
+    return t === k || (t.startsWith(k) && k.length >= 3) || (k.startsWith(t) && t.length >= 4);
+  });
+}
+
+/** How many of the keywords appear in the item (all of a keyword's words, matched by word start). */
+export function keywordHits(i: TrendItem, keywords: string[]): number {
+  if (!keywords.length) return 0;
+  const a = i.attributes;
+  const text = [i.title, i.source_item_id, i.category, a.material, a.pattern, a.silhouette, ...(a.style_tags ?? []), ...(a.colors ?? []), ...(i.evidence?.brands ?? [])].filter(Boolean).join(" ").toLowerCase();
+  const words = text.split(/[^a-z0-9]+/).filter(Boolean);
+  return keywords.filter((k) => {
+    const kws = k.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
+    return kws.length > 0 && kws.every((w) => wordMatch(w, words));
+  }).length;
 }
 
 function matchesKeywords(i: TrendItem, keywords?: string[]): boolean {

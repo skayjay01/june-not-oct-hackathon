@@ -348,7 +348,7 @@ function vocabLabels(v: QuestionVocab): Record<string, string> {
 
 // ---------- design: the summary ----------
 
-const SUMMARY_SYSTEM = `You write the 2–3 sentence summary at the top of a fashion trend dashboard for a small brand's founder. Use only the numbers and names in the widgets given; never invent data, brands or percentages. Plain words, no jargon, no hype. Lead with the clearest finding, then one practical takeaway.`;
+const SUMMARY_SYSTEM = `You write the 2–3 sentence summary at the top of a fashion trend dashboard for a small brand's founder. Use only the numbers and names in the widgets given; never invent data, brands, stores or percentages. Index values are relative trend scores within this dashboard (0–100), not growth or sales, so compare them but never call a low one "plateaued" or "weak" on its own. Products and stores are other stores' listings in the trend library, shown as evidence: they are not the founder's stock, stores or partners, so never tell the founder to buy, promote or stock a specific listed product. Scores from different widgets are not comparable. When runway or press signals are shown, name the most relevant one and the houses or source behind it. Plain words, no jargon, no hype. Lead with the clearest finding, then one practical takeaway.`;
 
 async function writeSummary(question: string, widgets: Widget[], deps: DashboardDeps, requestId: string): Promise<string> {
   const data = widgets.map((w) => ({ title: w.title, unit: w.unit, rows: (w.rows ?? []).slice(0, 5).map((r) => [r.label, r.value]) }));
