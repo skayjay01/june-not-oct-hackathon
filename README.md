@@ -5,6 +5,8 @@
 Hackathon project by Yishan, Yizhi and Blair. The full spec is the [PRD](tasks/prd-ask-a-trend-dashboard.md); the research behind it is in [research notes](tasks/research-2026-10-24.md); **who builds what** is in the [build plan](tasks/build-plan.md).
 
 > Status: **planning** — the PRD is final, no app code yet.
+>
+> 🌐 **Live site:** https://june-not-oct-hackathon.vercel.app (shows "not found" until the first app code is merged)
 
 ---
 
@@ -158,12 +160,32 @@ The crawler plays by the rules: it follows each site's crawler instructions, goe
 
 | Piece | What we use |
 |---|---|
-| Website hosting | Vercel (deploys automatically from this repo) |
-| Database | Supabase |
+| App framework | Next.js + TypeScript |
+| Website hosting | **Vercel** — project `june-not-oct-hackathon`, deploys automatically from this repo |
+| Database | **Supabase** — project `june-not-oct-hackathon` (US East) |
 | AI | Gemini 3.8 Flash / Claude Haiku 5.5 (decide on day 1 by timing both) |
 | Email | Resend |
 | Slack | Incoming webhooks |
 | WhatsApp | Meta test number (demo only) |
+
+## Getting set up
+
+**How shipping works:** push a branch and open a pull request → Vercel builds it and posts a **preview link** on the PR → merge to `main` → it goes live at **https://june-not-oct-hackathon.vercel.app**. Nobody needs a Vercel login: preview links open for anyone who has the link (don't post them publicly).
+
+**What you need**
+1. Accept the GitHub invite to this repo (check your GitHub email).
+2. Accept the Supabase invite to the "June not Oct Hackathon" organization (sent to your HBS email). You're an Administrator: you can see the database, tables and keys.
+3. Clone the repo and give your coding agent this README, `CLAUDE.md`, the [PRD](tasks/prd-ask-a-trend-dashboard.md) and the [build plan](tasks/build-plan.md).
+
+**Running it on your laptop:** create a file named `.env.local` in the project folder (it's ignored by git — never commit it) with these three lines. Get the values from Supabase → project `june-not-oct-hackathon` → Project Settings → API Keys / Data API.
+
+| Setting | What it is | Where to copy it from |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | The database's web address | Data API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public key, safe in the browser | API Keys → Publishable key |
+| `SUPABASE_SECRET_KEY` | Secret key, **server code only** | API Keys → Secret key |
+
+The live and preview sites already have all three set in Vercel.
 
 ## Team
 
