@@ -2,8 +2,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { connection } from "next/server";
 import { inputClass } from "@/components/form";
+import { changeBrand } from "./actions";
 import { exampleQuestions } from "./ask/data";
-import { currentBrand, type CurrentBrand } from "./current-brand";
+import { currentBrand, previousBrand, type CurrentBrand } from "./current-brand";
 import { OnboardForm } from "./onboard/onboard-form";
 
 // The form's action starts the crawl + AI profile in the background (after()); give it room.
@@ -13,10 +14,10 @@ export const maxDuration = 300;
 async function Home() {
   await connection(); // read at request time, not baked in at build
   const brand = await currentBrand();
-  return brand ? <Workspace brand={brand} /> : <Welcome />;
+  return brand ? <Workspace brand={brand} /> : <Welcome previous={await previousBrand()} />;
 }
 
-function Welcome() {
+function Welcome({ previous }: { previous: CurrentBrand | null }) {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
@@ -26,6 +27,14 @@ function Welcome() {
           accounts, learn your style in a couple of minutes, then send you on-trend ideas that fit it. You can edit the
           profile before anything is sent.
         </p>
+        {previous && (
+          <p className="text-sm">
+            {/* A full page load: /use sets the cookie and redirects, which a client-side Link wouldn't re-render. */}
+            <a href={`/brands/${previous.id}/use`} className="underline underline-offset-2">
+              Back to {previous.name}
+            </a>
+          </p>
+        )}
       </div>
       <OnboardForm />
     </div>
@@ -46,6 +55,11 @@ async function Workspace({ brand }: { brand: CurrentBrand }) {
           <Link href={`/brands/${brand.id}/settings`} className="underline underline-offset-2">
             Settings
           </Link>
+          <form action={changeBrand}>
+            <button type="submit" className="underline underline-offset-2">
+              Change brand
+            </button>
+          </form>
         </div>
       </div>
       {brand.hasProfile ? (

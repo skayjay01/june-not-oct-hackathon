@@ -32,3 +32,20 @@ export async function forgetBrand(id: string) {
   const jar = await cookies();
   if (jar.get(COOKIE)?.value === id) jar.delete(COOKIE);
 }
+
+// "Change brand": this browser stops using its brand (nothing is deleted) and keeps a pointer back
+// to it, so the add-a-brand screen can offer a way back.
+const PREVIOUS = "previous_brand_id";
+
+export async function leaveBrand() {
+  const jar = await cookies();
+  const id = jar.get(COOKIE)?.value;
+  if (id) jar.set(PREVIOUS, id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: YEAR, path: "/" });
+  jar.delete(COOKIE);
+}
+
+export async function previousBrand(): Promise<CurrentBrand | null> {
+  const id = (await cookies()).get(PREVIOUS)?.value;
+  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  return brandById(id);
+}
