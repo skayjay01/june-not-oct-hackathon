@@ -264,7 +264,10 @@ export function runQuery(name: QueryName, params: QueryParams, items: TrendItem[
       });
       rows.sort((a, b) => a.label.localeCompare(b.label) || (a.date ?? "").localeCompare(b.date ?? ""));
       const keep = new Set([...new Set(rows.map((r) => r.label))].slice(0, limit));
-      return done(rows.filter((r) => keep.has(r.label)), kws, "index");
+      const shown = rows.filter((r) => keep.has(r.label));
+      const dates = shown.map((r) => r.date!).sort();
+      // the chart's own dates, not when the rows were collected
+      return { ...done(shown, kws, "index"), date_range: dates.length ? { from: dates[0], to: dates[dates.length - 1] } : null };
     }
 
     case "item_count": {

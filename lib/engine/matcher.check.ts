@@ -79,7 +79,7 @@ expect("weights: emphasis raises that dimension, total stays 100", Math.abs(tota
 const base = order(presets.editorial);
 const down = order(presets.editorial, { feedback: [{ item_key: `linen:${base[0]}`, vote: -1 }] });
 expect("feedback: 👎 on the top item lowers it", down.indexOf(base[0]) > 0, `${base} → ${down}`);
-expect("feedback: key parsing", itemIdFromFeedbackKey("butter-yellow:42") === 42 && itemIdFromFeedbackKey("butter-yellow") === null);
+expect("feedback: key parsing", itemIdFromFeedbackKey("butter-yellow:42") === 42 && itemIdFromFeedbackKey("butter-yellow") === null && itemIdFromFeedbackKey("colors.butter-yellow:123") === 123);
 const ranked = rankItems(filterItems(items, ctxFor(presets.editorial)), ctxFor(presets.editorial));
 expect("rank: scores within 0–1 and sorted", ranked.every((r, i) => r.score >= 0 && r.score <= 1 && (i === 0 || ranked[i - 1].score >= r.score)));
 
