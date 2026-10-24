@@ -9,6 +9,7 @@ export const USER_AGENT =
 const MIN_DELAY_MS = 1000;
 const TIMEOUT_MS = 15_000;
 const MAX_BYTES = 3_000_000;
+const MAX_RETRY_AFTER_S = 30;
 
 type Robots = ReturnType<typeof robotsParser>;
 
@@ -16,7 +17,7 @@ const robotsCache = new Map<string, Promise<Robots>>();
 const nextSlot = new Map<string, number>();
 
 export type FetchResult =
-  | { ok: true; url: string; status: number; contentType: string; body: string }
+  | { ok: true; url: string; status: number; contentType: string; body: string; retryAfterS: number | null }
   | { ok: false; url: string; reason: string };
 
 async function robotsFor(origin: string): Promise<Robots> {
@@ -48,7 +49,9 @@ async function rawFetch(url: string): Promise<FetchResult> {
   });
   const body = await res.text();
   if (body.length > MAX_BYTES) return { ok: false, url, reason: "response too large" };
+  const retryAfter = Number(res.headers.get("retry-after"));
   return {
+    retryAfterS: Number.isFinite(retryAfter) && retryAfter >= 0 ? retryAfter : null,
     ok: true,
     url: res.url || url,
     status: res.status,
@@ -72,10 +75,17 @@ export async function politeFetch(url: string): Promise<FetchResult> {
   if (robots.isDisallowed(url, USER_AGENT)) return { ok: false, url, reason: "disallowed by robots.txt" };
 
   const crawlDelayMs = (robots.getCrawlDelay(USER_AGENT) ?? 0) * 1000;
-  await waitTurn(parsed.host, Math.max(MIN_DELAY_MS, crawlDelayMs));
+  const delay = Math.max(MIN_DELAY_MS, crawlDelayMs);
+  await waitTurn(parsed.host, delay);
 
   try {
-    const res = await rawFetch(url);
+    let res = await rawFetch(url);
+    // A site that says "slow down" gets what it asks for once: wait out a short Retry-After, then retry.
+    if (res.ok && res.status === 429 && res.retryAfterS !== null && res.retryAfterS <= MAX_RETRY_AFTER_S) {
+      nextSlot.set(parsed.host, Date.now() + res.retryAfterS * 1000 + delay);
+      await waitTurn(parsed.host, delay);
+      res = await rawFetch(url);
+    }
     if (!res.ok) return res;
     // Logins, paywalls and anti-bot challenges are a hard stop, never something to get around.
     if (res.status === 401 || res.status === 403 || res.status === 429) {

@@ -4,8 +4,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
-  // Engine reads Blair's lists from disk at runtime (lib/engine/vocab.ts); ship them with every route.
-  outputFileTracingIncludes: { "/**": ["./data/curation/**"] },
+  // Engine and connectors read data/curation (Blair) and data/snapshots (connector inputs) at runtime.
+  outputFileTracingIncludes: { "/**": ["./data/curation/**", "./data/snapshots/**"] },
   turbopack: {
     rules: {
       "*.css": {
