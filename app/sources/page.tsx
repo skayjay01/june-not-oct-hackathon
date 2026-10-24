@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { connection } from "next/server";
 import { db } from "@/lib/db/server";
 import { setEnabled } from "./actions";
@@ -15,9 +14,6 @@ type Source = { key: string; name: string; enabled: boolean; terms_notes: string
 export default function SourcesPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-12">
-      <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
-        ← Ask-a-Trend
-      </Link>
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">Trend sources</h1>
         <p className="text-zinc-600 dark:text-zinc-400">

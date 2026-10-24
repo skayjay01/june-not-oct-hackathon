@@ -9,9 +9,6 @@ export const metadata = { title: "Ask a trend question · Ask-a-Trend" };
 export default function AskPage({ searchParams }: PageProps<"/ask">) {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-12">
-      <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
-        ← Ask-a-Trend
-      </Link>
       <h1 className="text-3xl font-semibold tracking-tight">Ask a trend question</h1>
       <Suspense fallback={<p className="text-zinc-500">Loading…</p>}>
         <Ask searchParams={searchParams} />
