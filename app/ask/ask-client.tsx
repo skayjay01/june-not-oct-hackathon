@@ -6,11 +6,11 @@ import { Button, inputClass } from "@/components/form";
 import { WidgetCard } from "@/components/dashboard/widgets";
 import { WeightsEditor, type Preset, type WeightValues } from "@/components/weights-editor";
 import { saveWeights } from "@/app/brands/[id]/settings/actions";
-import { loadEvidence, loadWeights, rerank } from "./actions";
+import { loadEvidence, loadWeights, rerank, saveDashboard } from "./actions";
 
 type Brand = { id: string; name: string };
 
-type View = {
+export type View = {
   question: string;
   title: string;
   summary: string;
@@ -23,7 +23,7 @@ type View = {
   seconds: number | null;
 };
 
-const empty = (question: string): View => ({ question, title: "", summary: "", widgets: [], pendingIds: [], spec: null, notice: null, error: null, cached: false, seconds: null });
+export const empty = (question: string): View => ({ question, title: "", summary: "", widgets: [], pendingIds: [], spec: null, notice: null, error: null, cached: false, seconds: null });
 
 export function AskClient({
   brands,
@@ -165,6 +165,8 @@ export function AskClient({
 
       {view && <Dashboard view={view} busy={busy} onPick={pick} />}
 
+      {view?.spec && !busy && <SharePanel key={view.spec.title + view.widgets.map((w) => w.id).join()} brandId={brandId} spec={view.spec} />}
+
       {view?.spec && !busy && (
         <form
           onSubmit={(e) => {
@@ -226,7 +228,7 @@ function apply(v: View, e: DashboardEvent): View {
   }
 }
 
-function Dashboard({ view, busy, onPick }: { view: View; busy: boolean; onPick: (ids: number[], label: string) => void }) {
+export function Dashboard({ view, busy, onPick }: { view: View; busy: boolean; onPick: (ids: number[], label: string) => void }) {
   return (
     <div className="flex flex-col gap-4" aria-live="polite" aria-busy={busy}>
       <div className="flex flex-col gap-1">
@@ -257,7 +259,7 @@ function Dashboard({ view, busy, onPick }: { view: View; busy: boolean; onPick: 
   );
 }
 
-function EvidencePanel({ label, items, onClose }: { label: string; items: TrendItem[] | null; onClose: () => void }) {
+export function EvidencePanel({ label, items, onClose }: { label: string; items: TrendItem[] | null; onClose: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -311,6 +313,36 @@ function EvidencePanel({ label, items, onClose }: { label: string; items: TrendI
           </ul>
         )}
       </aside>
+    </div>
+  );
+}
+
+// Save the dashboard as shown and hand back a link that replays it without the AI (US-010).
+function SharePanel({ brandId, spec }: { brandId: string; spec: DashboardSpec }) {
+  const [link, setLink] = useState("");
+  const [status, setStatus] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function save() {
+    setPending(true);
+    const res = await saveDashboard(brandId, spec);
+    setPending(false);
+    if ("error" in res) return setStatus(res.error);
+    const url = `${window.location.origin}/d/${res.id}`;
+    setLink(url);
+    setStatus(await navigator.clipboard.writeText(url).then(() => "Link copied.", () => ""));
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {link ? (
+        <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label="Share link" className={`${inputClass} w-auto min-w-0 flex-1 py-1.5 text-sm`} />
+      ) : (
+        <Button type="button" variant="secondary" pending={pending} onClick={save}>
+          Save &amp; share
+        </Button>
+      )}
+      {status && <p className="text-sm text-zinc-500">{status}</p>}
     </div>
   );
 }
