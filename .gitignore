@@ -5,3 +5,5 @@ node_modules/
 .next/
 dist/
 
+.claude/worktrees/
+.claude/.session-changes/
