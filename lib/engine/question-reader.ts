@@ -111,6 +111,7 @@ categories: ${list(v.categories)}
 colors: ${v.colors.map((c) => `${c.id} (${c.label}${c.family ? `, ${c.family}` : ""})`).join(", ") || "(none loaded)"}
 
 colors lists the colors the question names. For a family word ("green", "orange"), list every id in that family. Leave it empty when no color is named.
+keywords: 1 to 5 short words naming the question's subject as they would appear in product titles or trend reports (products, materials, motifs, collaborations, places), and always 2 or 3 concrete product words a store would put in titles: "sports merch" → "merch", "cap", "jersey", "beanie". Not colors, categories or style tags already captured, and not generic words like trend or season. Empty for broad questions.
 
 price_min and price_max are in US dollars; null when the question gives no price. "under $50" means price_max 50.
 focus is what the user asks about: color, silhouette, material, pattern, product, keyword (search terms), or general.
@@ -143,6 +144,7 @@ export function normalizeIntent(raw: unknown, opts: Pick<ReadOptions, "vocab" | 
     style_tags: toIds(asStrings(r.style_tags), vocab.styleTags),
     categories: toIds(asStrings(r.categories), vocab.categories),
     colors: toIds(asStrings(r.colors), vocab.colors),
+    keywords: cleanKeywords(asStrings(r.keywords)),
     price_min: priceMin,
     price_max: priceMax,
     focus,
@@ -172,6 +174,7 @@ function outOfScope(opts: Pick<ReadOptions, "vocab" | "profile">, suggestion: st
     style_tags: [],
     categories: [],
     colors: [],
+    keywords: [],
     price_min: null,
     price_max: null,
     focus: "general",
@@ -255,6 +258,7 @@ export function readByKeywords(q: string, opts: Pick<ReadOptions, "vocab" | "pro
     style_tags: styleTags,
     categories,
     colors,
+    keywords: subjectWords(q, opts.vocab),
     price_min: min,
     price_max: max,
     focus: FOCUS_WORDS.find(([, re]) => re.test(q))?.[0] ?? (colors.length ? "color" : "general"),
@@ -278,6 +282,7 @@ export function refineByKeywords(q: string, prev: QuestionIntent, opts: Pick<Rea
     style_tags: styleTags.length ? styleTags : prev.style_tags,
     categories: categories.length ? categories : prev.categories,
     colors: namedColors(q, vocab.colors).length ? namedColors(q, vocab.colors) : (prev.colors ?? []),
+    keywords: subjectWords(q, vocab).length ? subjectWords(q, vocab) : (prev.keywords ?? []),
     // a new price bound replaces the old range; no price in the follow-up keeps it
     price_min: min !== null || max !== null ? min : prev.price_min,
     price_max: min !== null || max !== null ? max : prev.price_max,
@@ -285,6 +290,17 @@ export function refineByKeywords(q: string, prev: QuestionIntent, opts: Pick<Rea
     emphasis: unique([...prev.emphasis, ...EMPHASIS_WORDS.filter(([, re]) => re.test(q)).map(([d]) => d)]),
     time_window_days: explicitWindow(q) ?? prev.time_window_days,
   };
+}
+
+const cleanKeywords = (ks: string[]) => unique(ks.map((k) => k.toLowerCase().replace(/[^a-z0-9 &'-]/g, " ").replace(/\s+/g, " ").trim()).filter((k) => k.length >= 3 && k.length <= 40)).slice(0, 5);
+
+const STOP = new Set("about after again also back been before being between both brand brands coming could does doing down during each from have having here into just lean like more most much next only other over popular right same season seasons should still such than that their them then there these they this those through trend trending trends under very want what when where which while will with would your ours peaked rising moment add gaining traction growing worth best hottest biggest look looks".split(" "));
+
+/** Keyword fallback: the question's content words that aren't colors, categories, style tags or season words. */
+function subjectWords(q: string, vocab: QuestionVocab): string[] {
+  const known = [...vocab.colors, ...vocab.categories, ...vocab.styleTags].flatMap((e) => [e.label.toLowerCase(), e.id.replace(/-/g, " ")]);
+  const words = q.toLowerCase().replace(/[^a-z0-9 -]/g, " ").split(/[\s-]+/).filter((w) => w.length >= 4 && !STOP.has(w) && !/^\d+$/.test(w));
+  return cleanKeywords(words.filter((w) => !known.some((k) => k === w || k === `${w}s` || `${k}s` === w) && !COLOR_WORDS.test(w) && !/^(spring|summer|fall|autumn|winter)$/.test(w)));
 }
 
 /** Colors named outright ("butter yellow"), plus every shade of a family word ("green") whose shades weren't named. */

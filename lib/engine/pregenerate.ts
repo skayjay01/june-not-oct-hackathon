@@ -23,6 +23,8 @@ export interface PregenDeps {
   answer(brandId: string, question: string): AsyncIterable<DashboardEvent>;
   /** flags the stored answer as demo content (saved_answers.is_demo) */
   markDemo(brandId: string, question: string): Promise<void>;
+  /** set to rebuild: drops the stored answer first so the question is answered afresh */
+  forget?(brandId: string, question: string): Promise<void>;
   log?: (line: string) => void;
 }
 
@@ -95,6 +97,7 @@ export async function pregenerate(brands: DemoBrand[], questions: DemoQuestion[]
       continue;
     }
     try {
+      await deps.forget?.(brandId, q.question);
       const t0 = Date.now();
       const built = await finalSpec(deps.answer(brandId, q.question));
       row.build_ms = Date.now() - t0;

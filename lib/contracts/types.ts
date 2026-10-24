@@ -96,6 +96,8 @@ export interface QuestionIntent {
   categories: CategoryId[];
   /** colors the question names; a family word ("green") means that family's ids */
   colors?: ColorId[];
+  /** the question's subject words, as they'd appear in product titles or trend reports ("cap", "tartan") */
+  keywords?: string[];
   price_min: number | null;
   price_max: number | null;
   /** which aspect the user is asking about */

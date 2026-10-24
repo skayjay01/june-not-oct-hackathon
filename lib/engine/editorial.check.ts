@@ -2,7 +2,7 @@
 // Run: npx tsx lib/engine/editorial.check.ts  (exits 1 on any problem)
 
 import { readFileSync } from "node:fs";
-import { DEMO_BRAND_ID, sampleBrandProfile } from "../contracts/fixtures";
+import { DEMO_BRAND_ID, sampleBrandProfile, sampleTrendItems } from "../contracts/fixtures";
 import type { DashboardEvent, TrendItem } from "../contracts/types";
 import { answerQuestion, type AskStep } from "./dashboard-builder";
 import { buildEditorialItems, parseCsv, readCurationFiles } from "./editorial";
@@ -62,6 +62,25 @@ const run = async (q: string) => {
   for await (const e of answerQuestion(DEMO_BRAND_ID, q, { ask: deadAsk, vocab, loadBrand: async () => ({ profile: sampleBrandProfile, weights: ctx.weights }), loadItems: async () => filterItems(items, ctx), now: () => ctx.now! })) ev.push(e);
   return ev.find((e): e is Extract<DashboardEvent, { type: "done" }> => e.type === "done")?.spec;
 };
+
+// 6. Relevance: facts naming the question's subject come first (Blair's Knicks-cap Lyst spike for a merch question)
+const merchCtx = { ...ctx, intent: { in_scope: true, suggestion: null, style_tags: [], categories: [], colors: [], keywords: ["cap", "team", "merch"], price_min: null, price_max: null, focus: "product" as const, emphasis: [], time_window_days: 365 } };
+const merch = runQuery("editorial_signals", { limit: 5 }, items, merchCtx);
+expect("relevance: Knicks cap fact leads the merch question's signals", merch.rows[0]?.label.includes("Knicks"), JSON.stringify(merch.rows.map((r) => r.label)));
+const noKw = runQuery("editorial_signals", { limit: 5 }, items, { ...merchCtx, intent: { ...merchCtx.intent, keywords: [] } });
+expect("relevance control: without keywords the Knicks fact isn't forced first", !noKw.rows[0]?.label.includes("Knicks"), JSON.stringify(noKw.rows.map((r) => r.label)));
+const generic = runQuery("editorial_signals", { limit: 5 }, items, { ...merchCtx, intent: { ...merchCtx.intent, keywords: ["prints"] } });
+expect("relevance: a generic word like 'prints' doesn't rank facts by that word", JSON.stringify(generic.rows) === JSON.stringify(noKw.rows), JSON.stringify(generic.rows.map((r) => r.label)));
+const tailor = runQuery("top_examples", {}, [{ ...sampleTrendItems[0], id: 1, title: "Tailored wool blazer" }, { ...sampleTrendItems[0], id: 2, title: "Linen shirt" }, { ...sampleTrendItems[0], id: 3, title: "Tailored trousers" }, { ...sampleTrendItems[0], id: 4, title: "Tailored skirt" }], { ...ctx, intent: { ...merchCtx.intent, keywords: ["tailoring"] } });
+expect("relevance: 'tailoring' matches 'Tailored …' products only", tailor.rows.length === 3 && tailor.rows.every((r) => r.label.startsWith("Tailored")), JSON.stringify(tailor.rows.map((r) => r.label)));
+expect("growth: the +4276% Lyst search spike reads as growth", byId("lyst-q2-knicks-cap").metrics.growth === 42.76, JSON.stringify(byId("lyst-q2-knicks-cap").metrics));
+
+// 7. A question naming a color no product has: no unrelated example products (control: a color that products do have)
+const butterIntent = { ...merchCtx.intent, keywords: [], colors: ["butter-yellow"] };
+const noButter = sampleTrendItems.filter((i) => !i.attributes.colors?.includes("butter-yellow"));
+expect("examples: named color with no matching product → no examples shown", runQuery("top_examples", {}, noButter, { ...ctx, intent: butterIntent }).rows.length === 0);
+const withButter = runQuery("top_examples", {}, sampleTrendItems, { ...ctx, intent: butterIntent });
+expect("examples control: products in that color are the ones shown", withButter.rows.length >= 3 && withButter.rows.every((r) => sampleTrendItems.find((i) => i.id === r.item_ids?.[0])?.attributes.colors?.includes("butter-yellow")), JSON.stringify(withButter.rows.map((r) => r.label)));
 
 const main = async () => {
   const green = await run("Should our spring 2027 dresses lean green or orange?");

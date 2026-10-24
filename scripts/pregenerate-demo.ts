@@ -4,6 +4,7 @@
 // Run from the repo root (needs .env.local with the Supabase and AI settings):
 //   npx tsx --conditions=react-server --env-file=.env.local scripts/pregenerate-demo.ts
 //   … --dry-run   lists what would be built, touching nothing
+//   … --fresh     rebuilds the rehearsed dashboards instead of replaying stored ones
 // Safe to re-run: brands are found by website, rows are upserted.
 
 import { DEMO_BRANDS, DEMO_QUESTIONS } from "@/lib/engine/demo-plan";
@@ -16,7 +17,7 @@ async function main() {
     return;
   }
   const { serverPregenDeps } = await import("@/lib/engine/demo-server");
-  const report = await pregenerate(DEMO_BRANDS, DEMO_QUESTIONS, serverPregenDeps((line) => console.log(line)));
+  const report = await pregenerate(DEMO_BRANDS, DEMO_QUESTIONS, serverPregenDeps((line) => console.log(line), { fresh: process.argv.includes("--fresh") }));
   const okQ = report.questions.filter((q) => q.ok).length;
   console.log(`\n${report.ok ? "DEMO READY" : "DEMO NOT READY"}: ${okQ}/${report.questions.length} rehearsed questions replay from cache in under 2 s.`);
   process.exitCode = report.ok ? 0 : 1;
