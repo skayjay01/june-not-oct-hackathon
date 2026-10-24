@@ -146,11 +146,22 @@ export function AskClient({
         </div>
       </form>
 
-      {view && <Dashboard view={view} busy={busy} onPick={pick} />}
+      {view && (
+        <Dashboard
+          view={view}
+          busy={busy}
+          onPick={pick}
+          onAsk={(q) => {
+            setQuestion(q);
+            setHistory([]);
+            void ask(q);
+          }}
+        />
+      )}
 
-      {view?.spec && !busy && <SharePanel key={view.spec.title + view.widgets.map((w) => w.id).join()} brandId={brandId} spec={view.spec} />}
+      {view?.spec && !view.notice && !busy && <SharePanel key={view.spec.title + view.widgets.map((w) => w.id).join()} brandId={brandId} spec={view.spec} />}
 
-      {view?.spec && !busy && (
+      {view?.spec && !view.notice && !busy && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -181,7 +192,7 @@ export function AskClient({
         </form>
       )}
 
-      {view?.spec && !busy && (
+      {view?.spec && !view.notice && !busy && (
         <RerankPanel
           key={`${brandId}:${view.spec.question}`}
           brandId={brandId}
@@ -211,7 +222,7 @@ function apply(v: View, e: DashboardEvent): View {
   }
 }
 
-export function Dashboard({ view, busy, onPick }: { view: View; busy: boolean; onPick: (ids: number[], label: string) => void }) {
+export function Dashboard({ view, busy, onPick, onAsk }: { view: View; busy: boolean; onPick: (ids: number[], label: string) => void; onAsk?: (q: string) => void }) {
   return (
     <div className="flex flex-col gap-4" aria-live="polite" aria-busy={busy}>
       <div className="flex flex-col gap-1">
@@ -222,12 +233,7 @@ export function Dashboard({ view, busy, onPick }: { view: View; busy: boolean; o
         )}
       </div>
       {view.error && <p className="text-red-700 dark:text-red-400">{view.error}</p>}
-      {view.notice && (
-        <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          {view.notice.message}
-          {view.notice.suggestion && <p className="mt-1">Try: “{view.notice.suggestion}”</p>}
-        </div>
-      )}
+      {view.notice && <NoticeCard notice={view.notice} onAsk={onAsk} />}
       <div className="grid gap-4 md:grid-cols-2">
         {view.widgets.map((w) => (
           <div key={w.id} className={w.chart === "image_grid" || w.chart === "trend_line" ? "md:col-span-2" : ""}>
@@ -238,6 +244,36 @@ export function Dashboard({ view, busy, onPick }: { view: View; busy: boolean; o
           <div key={id} className="h-48 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-900" />
         ))}
       </div>
+    </div>
+  );
+}
+
+// Off-topic or no-data answers: a friendly line plus the closest question we can answer, one click away.
+function NoticeCard({ notice, onAsk }: { notice: NonNullable<View["notice"]>; onAsk?: (q: string) => void }) {
+  const offTopic = notice.kind === "out_of_scope";
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-rose-50 p-5 dark:border-amber-900 dark:from-amber-950 dark:to-rose-950">
+      <div className="flex items-start gap-3">
+        <span aria-hidden className="text-3xl leading-none">{offTopic ? "🧭" : "🔍"}</span>
+        <p className="text-lg leading-snug text-amber-950 dark:text-amber-100">{notice.message}</p>
+      </div>
+      {notice.suggestion && (
+        <div className="flex flex-col gap-2 sm:pl-12">
+          <p className="text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300">{offTopic ? "Here's what we can answer" : "Try a broader question"}</p>
+          {onAsk ? (
+            <button
+              type="button"
+              onClick={() => onAsk(notice.suggestion!)}
+              className="group flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-white px-4 py-3 text-left font-medium text-zinc-900 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-500 hover:shadow dark:border-amber-800 dark:bg-zinc-900 dark:text-zinc-100"
+            >
+              <span>{notice.suggestion}</span>
+              <span aria-hidden className="shrink-0 text-amber-600 transition group-hover:translate-x-1">Ask it →</span>
+            </button>
+          ) : (
+            <p className="font-medium">“{notice.suggestion}”</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

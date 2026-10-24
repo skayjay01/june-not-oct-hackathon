@@ -10,7 +10,7 @@ import type {
   BrandProfile, ChartType, DashboardEvent, DashboardSpec, Feedback, QueryName, QueryParams, QuestionIntent, TrendItem, WeightDimension, Weights, Widget,
 } from "../contracts/types";
 import { runQuery, type MatchContext, type QueryOptions } from "./matcher";
-import { readQuestion, type QuestionVocab } from "./question-reader";
+import { fallbackAside, readQuestion, type QuestionVocab } from "./question-reader";
 
 export const MAX_WIDGETS = 6;
 
@@ -81,7 +81,7 @@ export async function* answerQuestion(brandId: string, question: string, deps: D
     const extra = { intent, ...(earlier ? { follows: earlier.question } : {}) };
 
     if (!intent.in_scope) {
-      const spec = { ...noticeSpec(question, "out_of_scope", "That question is outside what the trend dashboard covers.", intent.suggestion), ...extra };
+      const spec = { ...noticeSpec(question, "out_of_scope", intent.aside ?? fallbackAside(question), intent.suggestion), ...extra };
       yield { type: "done", spec, cached: false };
       return;
     }
@@ -128,7 +128,7 @@ async function* replay(spec: DashboardSpec): AsyncGenerator<DashboardEvent> {
 }
 
 function noticeSpec(question: string, kind: "out_of_scope" | "no_data", message: string, suggestion: string | null): DashboardSpec {
-  return { version: 1, question, title: kind === "out_of_scope" ? "Try a trend question" : "Not enough data yet", summary: "", widgets: [], notice: { kind, message, suggestion } };
+  return { version: 1, question, title: kind === "out_of_scope" ? "Off our runway" : "Not enough data yet", summary: "", widgets: [], notice: { kind, message, suggestion } };
 }
 
 function broaderSuggestion(intent: QuestionIntent, vocab: QuestionVocab): string {

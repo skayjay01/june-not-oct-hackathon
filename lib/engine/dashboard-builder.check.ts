@@ -151,6 +151,7 @@ const main = async () => {
   store.clear();
   const off = final(await run("What's the weather in Boston tomorrow?", deps(goodAsk)))?.spec;
   expect("out of scope: notice + suggestion", off?.notice?.kind === "out_of_scope" && !!off.notice.suggestion && checkSpec(off).length === 0, JSON.stringify(off));
+  expect("out of scope: a playful line, not the stock refusal", !!off?.notice?.message && !/outside what the trend dashboard covers/.test(off.notice.message), off?.notice?.message);
   const none = final(await run("Which colors are trending in dresses?", deps(goodAsk, { loadItems: async () => [] })))?.spec;
   expect("no data: notice + suggestion", none?.notice?.kind === "no_data" && !!none.notice.suggestion && checkSpec(none).length === 0, JSON.stringify(none));
 
