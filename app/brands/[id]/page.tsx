@@ -107,6 +107,14 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
               }))}
             />
           </div>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <Link href={`/ask?brand=${id}`} className="underline underline-offset-2">
+              Ask a trend question
+            </Link>
+            <Link href={`/brands/${id}/settings`} className="underline underline-offset-2">
+              Settings: weights, delivery, paid sources
+            </Link>
+          </div>
           <form action={retry} className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
             <button type="submit" disabled={!!stage && stage !== "failed"} className="text-sm text-zinc-500 underline-offset-2 hover:underline disabled:opacity-50">
               Re-read my site (keeps your edits)
