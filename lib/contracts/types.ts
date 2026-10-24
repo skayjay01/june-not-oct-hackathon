@@ -157,6 +157,10 @@ export interface DashboardSpec {
   widgets: Widget[];
   /** set when the question was out of scope or matched no data */
   notice?: { kind: "out_of_scope" | "no_data"; message: string; suggestion: string | null };
+  /** how the question was read; lets the dashboard be re-ranked or followed up without the AI */
+  intent?: QuestionIntent;
+  /** set on a follow-up: the question it refined (US-009) */
+  follows?: string;
 }
 
 /** Streamed by answerQuestion so widgets appear one by one. */
@@ -204,8 +208,13 @@ export interface Feedback {
 /** Engine (owner Yishan), called by the app (Yizhi). */
 export interface Engine {
   buildProfile(brandId: string): Promise<BrandProfile>;
-  answerQuestion(brandId: string, question: string): AsyncIterable<DashboardEvent>;
+  /** pass `previous` to answer a follow-up that refines that dashboard (US-009) */
+  answerQuestion(brandId: string, question: string, previous?: DashboardSpec): AsyncIterable<DashboardEvent>;
   buildDigest(brandId: string): Promise<DigestSpec>;
+  /** re-rank a dashboard under new weights with no AI call (US-007) */
+  rerankDashboard(brandId: string, spec: DashboardSpec, weights: Pick<Weights, WeightDimension>): Promise<DashboardSpec>;
+  /** the real items behind a chart element, for the evidence panel (US-009); never another brand's licensed rows */
+  getEvidence(brandId: string, itemIds: number[]): Promise<TrendItem[]>;
 }
 
 /** Data + delivery (owner Yizhi), called by the engine and the scheduler. */

@@ -39,6 +39,8 @@ export interface ReadOptions {
   ask: AskJson;
   /** the asking brand's profile: used only to make the off-topic suggestion relevant */
   profile?: Pick<BrandProfile, "categories" | "style_tags" | "price_max"> | null;
+  /** set for a follow-up (US-009): the question being refined and how it was read */
+  previous?: { question: string; intent: QuestionIntent } | null;
 }
 
 export interface ReadResult {
@@ -70,18 +72,23 @@ export async function readQuestion(question: string, opts: ReadOptions): Promise
     return { intent: outOfScope(opts, `Questions can be up to ${MAX_QUESTION_CHARS} characters. Try a shorter one.`), via: "keywords" };
   }
   try {
+    const prev = opts.previous;
     const raw = await opts.ask({
       step: "interpret",
-      system: systemPrompt(opts.vocab),
-      prompt: q,
+      system: systemPrompt(opts.vocab) + (prev ? FOLLOW_UP_RULE : ""),
+      prompt: prev ? `Earlier question: ${prev.question}\nIts settings: ${JSON.stringify(prev.intent)}\nFollow-up: ${q}` : q,
       schema: questionIntentSchema,
       schemaName: "question_intent",
     });
     return { intent: normalizeIntent(raw, opts), via: "ai" };
   } catch {
-    return { intent: readByKeywords(q, opts), via: "keywords" };
+    return { intent: opts.previous ? refineByKeywords(q, opts.previous.intent, opts) : readByKeywords(q, opts), via: "keywords" };
   }
 }
+
+const FOLLOW_UP_RULE = `
+
+The user is refining an earlier question. Return the full settings for the earlier question as changed by the follow-up: keep every earlier setting the follow-up does not change. A follow-up like "only under $50" or "what about skirts?" is in scope whenever the earlier question was.`;
 
 // ---------- prompt ----------
 
@@ -245,6 +252,29 @@ export function readByKeywords(q: string, opts: Pick<ReadOptions, "vocab" | "pro
   };
 }
 
+/** Keyword reading of a follow-up: starts from the earlier intent and changes only what the follow-up states. */
+export function refineByKeywords(q: string, prev: QuestionIntent, opts: Pick<ReadOptions, "vocab" | "profile">): QuestionIntent {
+  if (!prev.in_scope || UNSUPPORTED.test(q)) return outOfScope(opts, null);
+  const { vocab } = opts;
+  const mentioned = (entries: VocabEntry[]) =>
+    unique(entries.filter((e) => wordIn(q, e.label) || wordIn(q, e.id.replace(/-/g, " "))).map((e) => e.id));
+  const styleTags = mentioned(vocab.styleTags);
+  const categories = mentioned(vocab.categories);
+  const { min, max } = priceRange(q);
+  const focus = FOCUS_WORDS.find(([, re]) => re.test(q))?.[0];
+  return {
+    ...prev,
+    style_tags: styleTags.length ? styleTags : prev.style_tags,
+    categories: categories.length ? categories : prev.categories,
+    // a new price bound replaces the old range; no price in the follow-up keeps it
+    price_min: min !== null || max !== null ? min : prev.price_min,
+    price_max: min !== null || max !== null ? max : prev.price_max,
+    focus: focus ?? prev.focus,
+    emphasis: unique([...prev.emphasis, ...EMPHASIS_WORDS.filter(([, re]) => re.test(q)).map(([d]) => d)]),
+    time_window_days: explicitWindow(q) ?? prev.time_window_days,
+  };
+}
+
 function wordIn(text: string, phrase: string): boolean {
   const p = phrase.trim().toLowerCase();
   if (!p) return false;
@@ -265,10 +295,15 @@ function priceRange(q: string): { min: number | null; max: number | null } {
 }
 
 function windowDays(q: string): number {
+  return explicitWindow(q) ?? DEFAULT_WINDOW_DAYS;
+}
+
+/** The time window the text actually states, or null. */
+function explicitWindow(q: string): number | null {
   const n = q.match(/\b(?:last|past)\s+(\d+)\s*(day|week|month|year)s?\b/i);
   if (n) return asWindow(Number(n[1]) * { day: 1, week: 7, month: 30, year: 365 }[n[2].toLowerCase() as "day"]);
   if (/\b(this|last|past) week\b/i.test(q)) return 7;
   if (/\b(this|last|past) month\b/i.test(q)) return 30;
   if (/\b(this|last|past) year\b|\b12 months\b/i.test(q)) return 365;
-  return DEFAULT_WINDOW_DAYS;
+  return null;
 }

@@ -54,10 +54,15 @@ export function questionHash(brandId: string, question: string): string {
   return createHash("sha256").update(`${brandId}\n${norm}`).digest("hex");
 }
 
-export async function* answerQuestion(brandId: string, question: string, deps: DashboardDeps): AsyncGenerator<DashboardEvent> {
+/**
+ * Streams a dashboard for `question`. With `previous` (US-009), the question is a follow-up
+ * that refines that dashboard: it keeps the earlier settings unless the follow-up changes them.
+ */
+export async function* answerQuestion(brandId: string, question: string, deps: DashboardDeps, previous?: DashboardSpec | null): AsyncGenerator<DashboardEvent> {
   const requestId = randomUUID();
   const now = deps.now?.() ?? new Date();
-  const hash = questionHash(brandId, question);
+  const earlier = previous?.intent?.in_scope ? { question: previous.question, intent: previous.intent } : null;
+  const hash = questionHash(brandId, earlier ? `${earlier.question}\n→ ${question}` : question);
 
   try {
     const hit = await deps.cache?.get(hash).catch(() => null);
@@ -70,11 +75,13 @@ export async function* answerQuestion(brandId: string, question: string, deps: D
     const { intent } = await readQuestion(question, {
       vocab: deps.vocab,
       profile: brand.profile,
+      previous: earlier,
       ask: (c) => deps.ask({ ...c, step: "interpret", requestId }),
     });
+    const extra = { intent, ...(earlier ? { follows: earlier.question } : {}) };
 
     if (!intent.in_scope) {
-      const spec = noticeSpec(question, "out_of_scope", "That question is outside what the trend dashboard covers.", intent.suggestion);
+      const spec = { ...noticeSpec(question, "out_of_scope", "That question is outside what the trend dashboard covers.", intent.suggestion), ...extra };
       yield { type: "done", spec, cached: false };
       return;
     }
@@ -84,7 +91,7 @@ export async function* answerQuestion(brandId: string, question: string, deps: D
     const ctx: MatchContext = { brandId, profile: brand.profile, weights: brand.weights, intent, feedback: brand.feedback, now };
     await deps.logTiming?.({ request_id: requestId, step: "match", ms: Date.now() - t0, model: null });
 
-    const plan = await planWidgets(question, intent, items, deps, requestId);
+    const plan = await planWidgets(earlier ? `${earlier.question} (follow-up: ${question})` : question, intent, items, deps, requestId);
     yield { type: "plan", title: plan.title, widget_ids: plan.widgets.map((w) => w.id) };
 
     const widgets: Widget[] = [];
@@ -96,7 +103,7 @@ export async function* answerQuestion(brandId: string, question: string, deps: D
     }
 
     if (!widgets.length) {
-      const spec = noticeSpec(question, "no_data", "We don't have enough trend data for that yet.", broaderSuggestion(intent, deps.vocab));
+      const spec = { ...noticeSpec(question, "no_data", "We don't have enough trend data for that yet.", broaderSuggestion(intent, deps.vocab)), ...extra };
       yield { type: "done", spec, cached: false };
       return;
     }
@@ -104,7 +111,7 @@ export async function* answerQuestion(brandId: string, question: string, deps: D
     const summary = await writeSummary(question, widgets, deps, requestId);
     yield { type: "summary", summary };
 
-    const spec: DashboardSpec = { version: 1, question, title: plan.title, summary, widgets };
+    const spec: DashboardSpec = { version: 1, question, title: plan.title, summary, widgets, ...extra };
     await deps.cache?.set(hash, question, spec).catch(() => undefined);
     yield { type: "done", spec, cached: false };
   } catch (e) {
@@ -295,16 +302,37 @@ function fillWidget(w: PlannedWidget, items: TrendItem[], ctx: MatchContext, dep
     ...(w.query === "segment_compare" ? { segments: [w.keywords[0], w.keywords[1]] as [string, string] } : {}),
     ...(w.query === "interest_over_time" && w.keywords.length ? { keywords: w.keywords } : {}),
   };
-  const res = runQuery(w.query, params, items, ctx, { ...deps.queryOptions, labels: { ...vocabLabels(deps.vocab), ...deps.queryOptions?.labels } });
+  return runWidget({ id: w.id, chart: w.chart, query: w.query, params, title: w.title, caption: w.caption || defaultTitle(w.query, w.attribute) }, items, ctx, deps);
+}
+
+/** Runs a widget's predefined query and attaches rows, source and date range; null when it has no data. */
+function runWidget(w: Omit<Widget, "rows" | "source" | "date_range" | "unit">, items: TrendItem[], ctx: MatchContext, deps: Pick<DashboardDeps, "vocab" | "queryOptions" | "sourceNames">): Widget | null {
+  const res = runQuery(w.query, w.params, items, ctx, { ...deps.queryOptions, labels: { ...vocabLabels(deps.vocab), ...deps.queryOptions?.labels } });
   const empty = !res.rows.length || (w.query === "item_count" && res.rows[0].value === 0) || (w.query === "segment_compare" && res.rows.every((r) => !r.item_ids?.length));
   if (empty) return null;
   return {
-    id: w.id, chart: w.chart, query: w.query, params, title: w.title, caption: w.caption || defaultTitle(w.query, w.attribute),
+    id: w.id, chart: w.chart, query: w.query, params: w.params, title: w.title, caption: w.caption,
     source: res.sources.map((s) => deps.sourceNames?.[s] ?? s).join(", "),
     date_range: res.date_range ?? undefined,
     rows: res.rows,
     unit: res.unit,
   };
+}
+
+// ---------- re-rank under new weights (US-007) ----------
+
+/**
+ * Re-runs every widget's saved query under `ctx` (typically new weights). No AI call: widgets,
+ * titles and captions stay; rows are recomputed. If any widget's top row changed, the AI summary
+ * may now be wrong, so it is replaced with a plain one from the new rows.
+ */
+export function rerankSpec(spec: DashboardSpec, items: TrendItem[], ctx: Omit<MatchContext, "intent">, deps: Pick<DashboardDeps, "vocab" | "queryOptions" | "sourceNames">): DashboardSpec {
+  if (!spec.widgets.length) return spec;
+  const full: MatchContext = { ...ctx, intent: spec.intent ?? null };
+  const widgets = spec.widgets.map((w) => runWidget(w, items, full, deps)).filter((w): w is Widget => !!w);
+  if (!widgets.length) return spec; // the data moved under us; keep what the user was looking at
+  const topChanged = widgets.some((w) => w.rows?.[0]?.label !== spec.widgets.find((o) => o.id === w.id)?.rows?.[0]?.label);
+  return { ...spec, widgets, summary: topChanged ? plainSummary(widgets) : spec.summary };
 }
 
 /** id → label for every vocabulary list, so widgets show "Butter yellow", not "butter-yellow". */

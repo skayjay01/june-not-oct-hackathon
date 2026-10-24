@@ -6,7 +6,7 @@
 
 import { DEMO_BRAND_ID, sampleBrandProfile, sampleWeights } from "../contracts/fixtures";
 import type { DashboardEvent, DashboardSpec, TrendItem } from "../contracts/types";
-import { answerQuestion, checkSpec, questionHash, repairPlan, type AskCall, type AskStep, type DashboardDeps } from "./dashboard-builder";
+import { answerQuestion, checkSpec, questionHash, repairPlan, rerankSpec, type AskCall, type AskStep, type DashboardDeps } from "./dashboard-builder";
 import { readByKeywords, type QuestionVocab } from "./question-reader";
 
 const NOW = new Date("2026-10-24T12:00:00Z");
@@ -156,6 +156,32 @@ const main = async () => {
 
   // 5. Timing for the non-AI match step is logged (AI steps are logged by the switchboard).
   expect("latency: match step logged", timings.includes("match"));
+
+  // 7. Follow-ups (US-009): refine the earlier dashboard, cached separately from the plain question.
+  store.clear();
+  const first = final(await run("Which colors are gaining traction in dresses?", deps(goodAsk)))!.spec;
+  expect("spec keeps its intent", first.intent?.categories.join() === "dresses", JSON.stringify(first.intent));
+  const fuEvents: DashboardEvent[] = [];
+  for await (const e of answerQuestion(DEMO_BRAND_ID, "only under $40", deps(deadAsk), first)) fuEvents.push(e);
+  const fu = final(fuEvents)?.spec;
+  const fuPrices = fu?.widgets.find((w) => w.query === "top_examples")?.rows?.map((r) => items.find((i) => i.id === r.item_ids?.[0])?.price) ?? [];
+  expect("follow-up: keeps dresses + color focus, applies the new price", !!fu && !fu.notice && fu.intent?.categories.join() === "dresses" && fu.intent?.price_max === 40 && fu.follows === first.question && fuPrices.length > 0 && fuPrices.every((p) => (p ?? 0) <= 40), JSON.stringify({ intent: fu?.intent, follows: fu?.follows, fuPrices, notice: fu?.notice }));
+  expect("follow-up: valid spec", !!fu && checkSpec(fu).length === 0);
+  const plainAgain = final(await run("only under $40", deps(deadAsk)))?.spec;
+  expect("follow-up: not confused with the same words asked fresh", plainAgain?.notice?.kind === "out_of_scope", JSON.stringify(plainAgain?.notice));
+
+  // 8. Re-rank under new weights (US-007): no AI, same widgets, rows reordered.
+  const W = (price_fit: number, social_buzz: number, growth_speed: number, competitor_adoption: number, style_fit: number) => ({ price_fit, social_buzz, growth_speed, competitor_adoption, style_fit });
+  const rctx = (w: ReturnType<typeof W>) => ({ brandId: DEMO_BRAND_ID, profile: sampleBrandProfile, weights: w, now: NOW });
+  const rd = { vocab, queryOptions: { colorHex: { "butter-yellow": "#F3E3A0" } } };
+  const cheap = rerankSpec(first, items, rctx(W(80, 5, 5, 5, 5)), rd);
+  const growth = rerankSpec(first, items, rctx(W(5, 5, 80, 5, 5)), rd);
+  const order = (s: DashboardSpec) => s.widgets.map((w) => w.rows?.map((r) => r.label).join("|")).join(" / ");
+  expect("rerank: same widgets, different order under different weights", cheap.widgets.map((w) => w.id).join() === first.widgets.map((w) => w.id).join() && order(cheap) !== order(growth), `${order(cheap)}\n   vs ${order(growth)}`);
+  expect("rerank: intent and title kept, spec valid", cheap.intent === first.intent && cheap.title === first.title && checkSpec(cheap).length === 0);
+  const topMoved = (s: DashboardSpec) => s.widgets.some((w) => w.rows?.[0]?.label !== first.widgets.find((o) => o.id === w.id)?.rows?.[0]?.label);
+  expect("rerank: summary replaced only when a top row moved", [cheap, growth].every((s) => (topMoved(s) ? s.summary !== first.summary : s.summary === first.summary)), JSON.stringify([cheap.summary, growth.summary]));
+  expect("rerank: notice-only spec returned unchanged", rerankSpec(off!, items, rctx(W(20, 20, 20, 20, 20)), rd) === off);
 
   // 6. A crash in data loading becomes a friendly error event, not a thrown exception.
   const crash = await run("Which colors are trending in dresses?", deps(goodAsk, { loadBrand: async () => { throw new Error("db down"); } }));
