@@ -84,7 +84,7 @@ function classify(err: unknown): Failure {
     const s = err.statusCode ?? 0;
     const msg = `HTTP ${s || "?"} ${err.message}`.slice(0, 200);
     if (s === 429) {
-      const quota = /quota|exhaust|billing|credit/i.test(err.message + (err.responseBody ?? ""));
+      const quota = /quota|exhaust|billing|credit|usage limit|limit reached/i.test(err.message + (err.responseBody ?? ""));
       return { kind: "cooldown", cooldownMs: quota ? COOLDOWN.quotaOrAuth : COOLDOWN.rateLimit, message: msg };
     }
     if (s === 401 || s === 402 || s === 403) return { kind: "cooldown", cooldownMs: COOLDOWN.quotaOrAuth, message: msg };
