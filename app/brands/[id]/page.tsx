@@ -5,6 +5,8 @@ import { connection } from "next/server";
 import type { BrandProfile } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
 import { recrawl, saveProfile } from "./actions";
+import { sendTestDigest } from "./digest-actions";
+import { DigestPanel } from "./digest-panel";
 import { ProfileEditor } from "./profile-editor";
 import { Progress, type Stage } from "./progress";
 import { editorVocab } from "./vocab";
@@ -41,11 +43,12 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
   await connection();
   if (!UUID.test(id)) notFound();
 
-  const [brandRes, profileRes, pagesRes, vocab] = await Promise.all([
-    db().from("brands").select("id, name, website_url, crawl_status").eq("id", id).maybeSingle(),
+  const [brandRes, profileRes, pagesRes, vocab, digestsRes] = await Promise.all([
+    db().from("brands").select("id, name, website_url, crawl_status, digest_channel").eq("id", id).maybeSingle(),
     db().from("brand_profiles").select("*").eq("brand_id", id).maybeSingle(),
     db().from("crawl_pages").select("kind").eq("brand_id", id),
     editorVocab(),
+    db().from("digests").select("id, spec, channel, sent_at").eq("brand_id", id).order("created_at", { ascending: false }).limit(5),
   ]);
   if (brandRes.error) throw brandRes.error;
   if (!brandRes.data) notFound();
@@ -92,6 +95,18 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
           {/* Remount (fresh values) when a re-read finishes, but not on the founder's own save,
               so the "Saved" message survives the refresh. */}
           <ProfileEditor key={brand.crawl_status} profile={profile} vocab={vocab} save={saveProfile.bind(null, id)} />
+          <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+            <DigestPanel
+              channel={brand.digest_channel}
+              send={sendTestDigest.bind(null, id)}
+              recent={(digestsRes.data ?? []).map((r) => ({
+                id: r.id,
+                date: r.spec.date,
+                headline: r.spec.headline,
+                sent: r.sent_at ? r.channel : null,
+              }))}
+            />
+          </div>
           <form action={retry} className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
             <button type="submit" disabled={!!stage && stage !== "failed"} className="text-sm text-zinc-500 underline-offset-2 hover:underline disabled:opacity-50">
               Re-read my site (keeps your edits)
