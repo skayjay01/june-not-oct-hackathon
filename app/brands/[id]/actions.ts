@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { refresh } from "next/cache";
 import { checkProfile, type BrandProfile } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
+import { PASTED_SITE_URL } from "@/lib/engine/brand-research";
 import { runOnboarding } from "@/lib/sources/onboard-brand";
 import { editorVocab } from "./vocab";
 
@@ -59,6 +60,18 @@ export async function saveProfile(brandId: string, _prev: SaveState, form: FormD
   if (saveError) return { ok: false, message: saveError.message };
   refresh();
   return { ok: true, message: "Saved. Your edits will be kept when we re-read your site." };
+}
+
+/** Text the founder pasted from their own site (when we couldn't read it), then rebuild the profile with it. */
+export async function pasteSiteText(brandId: string, _prev: SaveState, form: FormData): Promise<SaveState> {
+  const text = String(form.get("site_text") ?? "").trim();
+  if (text.length < 80) return { ok: false, message: "Paste a bit more: a paragraph or two from your About page, or a few product descriptions." };
+  const { error } = await db()
+    .from("crawl_pages")
+    .upsert({ brand_id: brandId, url: PASTED_SITE_URL, kind: "about", text: text.slice(0, 20_000), fetched_at: new Date().toISOString() }, { onConflict: "brand_id,url,kind" });
+  if (error) return { ok: false, message: `Couldn't save it: ${error.message}` };
+  await recrawl(brandId);
+  return { ok: true, message: "Got it. We're rebuilding your profile with your text." };
 }
 
 export async function recrawl(brandId: string) {

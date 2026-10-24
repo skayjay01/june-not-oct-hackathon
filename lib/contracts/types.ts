@@ -252,6 +252,8 @@ export interface Engine {
   getEvidence(brandId: string, itemIds: number[]): Promise<TrendItem[]>;
   /** onboarding: a brand's website and social accounts from its name (and its website, if the founder gave one) */
   findBrand(name: string, website?: string): Promise<BrandPresence>;
+  /** when the brand's own site can't be read: save what public sources say about it as crawl text; returns pages saved */
+  researchBrand(brandId: string): Promise<number>;
 }
 
 /** Data + delivery (owner Yizhi), called by the engine and the scheduler. */

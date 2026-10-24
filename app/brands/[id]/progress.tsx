@@ -7,7 +7,7 @@ import { Button } from "@/components/form";
 export type Stage = "reading" | "profiling" | "failed";
 
 const STEPS = [
-  { stage: "reading", label: "Reading the words on your site" },
+  { stage: "reading", label: "Reading your site and what's public about you" },
   { stage: "profiling", label: "Writing your style profile" },
 ] as const;
 
@@ -80,8 +80,8 @@ function FailedNotice({ retrying, onRetry }: { retrying: boolean; onRetry: () =>
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-red-700 dark:text-red-400">
-        We couldn&apos;t finish. Usually the site blocks automated reading, or there wasn&apos;t enough text on it. Pasting
-        a few Instagram captions when you sign up helps.
+        We couldn&apos;t find enough about your brand, on your site or elsewhere online. Paste some text from your site
+        below and we&apos;ll build your profile from that, or try again.
       </p>
       <Button variant="secondary" className="self-start" pending={retrying} onClick={onRetry}>
         {retrying ? "Trying again…" : "Try again"}

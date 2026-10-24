@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import type { BrandProfile } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
-import { recrawl, saveProfile } from "./actions";
+import { isSitePage, PASTED_SITE_URL, RESEARCH_PREFIX, researchSources } from "@/lib/engine/brand-research";
+import { pasteSiteText, recrawl, saveProfile } from "./actions";
 import { sendTestDigest } from "./digest-actions";
 import { DigestPanel } from "./digest-panel";
+import { PasteSiteText } from "./paste-site-text";
 import { ProfileEditor } from "./profile-editor";
 import { Progress, type Stage } from "./progress";
 import { editorVocab } from "./vocab";
@@ -40,10 +42,11 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
   await connection();
   if (!UUID.test(id)) notFound();
 
-  const [brandRes, profileRes, pagesRes, vocab, digestsRes] = await Promise.all([
+  const [brandRes, profileRes, pagesRes, researchRes, vocab, digestsRes] = await Promise.all([
     db().from("brands").select("id, name, website_url, crawl_status, digest_channel").eq("id", id).maybeSingle(),
     db().from("brand_profiles").select("*").eq("brand_id", id).maybeSingle(),
-    db().from("crawl_pages").select("kind").eq("brand_id", id),
+    db().from("crawl_pages").select("kind, url").eq("brand_id", id),
+    db().from("crawl_pages").select("text").eq("brand_id", id).eq("url", `${RESEARCH_PREFIX}about`).maybeSingle(),
     editorVocab(),
     db().from("digests").select("id, spec, channel, sent_at").eq("brand_id", id).order("created_at", { ascending: false }).limit(5),
   ]);
@@ -52,11 +55,24 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
   const brand = brandRes.data;
   const profile = profileRes.data as BrandProfile | null;
 
+  const allPages = pagesRes.data ?? [];
   const counts = new Map<string, number>();
-  for (const p of pagesRes.data ?? []) counts.set(p.kind, (counts.get(p.kind) ?? 0) + 1);
-  const readSummary = [...counts.entries()]
-    .map(([kind, n]) => `${n} ${(KIND_LABELS[kind] ?? [kind, kind])[n === 1 ? 0 : 1]}`)
+  for (const p of allPages) counts.set(p.kind, (counts.get(p.kind) ?? 0) + 1);
+  const siteCounts = new Map<string, number>();
+  for (const p of allPages.filter(isSitePage)) siteCounts.set(p.kind, (siteCounts.get(p.kind) ?? 0) + 1);
+  const sources = researchRes.data ? researchSources(researchRes.data.text) : [];
+  const pasted = allPages.some((p) => p.url === PASTED_SITE_URL);
+  const readSummary = [
+    ...[...siteCounts.entries()].map(([kind, n]) => `${n} ${(KIND_LABELS[kind] ?? [kind, kind])[n === 1 ? 0 : 1]}`),
+    researchRes.data ? `${sources.length || "several"} public source${sources.length === 1 ? "" : "s"}` : "",
+    pasted ? "the text you pasted" : "",
+  ]
+    .filter(Boolean)
     .join(", ");
+  const host = brand.website_url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  // We couldn't read (much of) the site, so the profile leans on public sources: say so, and offer the paste box.
+  const fromPublicSources = !!researchRes.data;
+  const paste = pasteSiteText.bind(null, id);
 
   const retry = recrawl.bind(null, id);
   const busy = brand.crawl_status === "running" || brand.crawl_status === "pending";
@@ -76,6 +92,11 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
         <>
           <p className="text-zinc-600 dark:text-zinc-400">We&apos;re learning your brand. This page updates by itself.</p>
           <Progress stage={stage ?? "profiling"} retry={retry} />
+          {stage === "failed" && (
+            <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+              <PasteSiteText paste={paste} host={host} />
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -89,6 +110,27 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
               {readSummary ? `Based on ${readSummary}. ` : ""}Check it and fix anything that&apos;s off; your trend digest is matched to this.
             </p>
           </div>
+          {fromPublicSources && (
+            <details className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900 dark:bg-amber-950/40" open={!pasted}>
+              <summary className="cursor-pointer font-medium">
+                We couldn&apos;t read much of {host}, so this profile also uses public sources about you.
+              </summary>
+              <div className="mt-3 flex flex-col gap-4">
+                {sources.length > 0 && (
+                  <ul className="flex flex-col gap-1">
+                    {sources.slice(0, 8).map((s) => (
+                      <li key={s.url}>
+                        <a href={s.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                          {s.title || new URL(s.url).hostname}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <PasteSiteText paste={paste} host={host} />
+              </div>
+            </details>
+          )}
           {/* Remount (fresh values) when a re-read finishes, but not on the founder's own save,
               so the "Saved" message survives the refresh. */}
           <ProfileEditor key={brand.crawl_status} profile={profile} vocab={vocab} save={saveProfile.bind(null, id)} />

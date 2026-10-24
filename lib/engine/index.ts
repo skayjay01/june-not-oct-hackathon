@@ -5,6 +5,7 @@ import { buildDigest } from "./build-digest";
 import { buildProfile } from "./build-profile";
 import { findBrand } from "./find-brand";
 import { rankItems } from "./matcher";
+import { researchBrand } from "./research-brand";
 
 /**
  * The engine the app calls (build-plan "Engine functions"). Server only.
@@ -19,4 +20,5 @@ export const engine: Engine = {
   rerankDashboard,
   getEvidence,
   findBrand,
+  researchBrand,
 };
