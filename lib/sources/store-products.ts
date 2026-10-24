@@ -17,6 +17,7 @@ export type TrendRow = Omit<TrendItem, "id">;
 export type StoreReport = { store: string; fetched: number; kept: number; error?: string };
 
 const DAY = 86_400_000;
+const MIN_LISTINGS = 5;
 
 type Tagged = StoreProduct & { store: string; host: string; currency: string; styleTags: string[]; vocab: Tags };
 
@@ -87,10 +88,11 @@ export async function collectStoreProducts({
     }
     stats.set(key(p), s);
   }
+  // Smoothed (+1 on both sides) and only with enough listings, so one store's drop doesn't read as +300%.
   const growthOf = (s: { recent: number; prior: number }) => {
-    const priorRate = s.prior / 2; // per 30 days
-    if (priorRate > 0) return Math.max(-1, Math.min(3, Math.round((s.recent / priorRate - 1) * 100) / 100));
-    return s.recent >= 3 ? 1 : null; // new this month with no history
+    if (s.recent + s.prior < MIN_LISTINGS) return null;
+    const g = (s.recent + 1) / (s.prior / 2 + 1) - 1; // prior is 60 days; compare per 30 days
+    return Math.max(-1, Math.min(3, Math.round(g * 100) / 100));
   };
 
   const collectedAt = now.toISOString();
