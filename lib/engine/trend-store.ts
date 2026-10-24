@@ -10,6 +10,7 @@ export const CANDIDATE_LIMIT = 2000;
 /** The slice of the supabase-js query builder used here (keeps this file free of the dependency). */
 interface Query extends PromiseLike<{ data: unknown[] | null; error: { message: string } | null }> {
   or(filter: string): Query;
+  in(column: string, values: readonly (string | number)[]): Query;
   gte(column: string, value: string): Query;
   order(column: string, opts: { ascending: boolean }): Query;
   limit(n: number): Query;
@@ -35,10 +36,29 @@ export async function loadCandidates(
   // no category filter here: rows with no category (e.g. keywords) must reach the matcher, which filters
   const { data, error } = await q.order("collected_at", { ascending: false }).limit(CANDIDATE_LIMIT);
   if (error) throw new Error(`loadCandidates: ${error.message}`);
+  return (data ?? []).map(toItem);
+}
 
-  // numeric columns arrive as strings from PostgREST; normalize to the contract
-  return (data ?? []).map((r) => {
-    const row = r as TrendItem & { price: number | string | null };
-    return { ...row, price: row.price === null ? null : Number(row.price), attributes: row.attributes ?? {}, metrics: row.metrics ?? {} };
-  });
+/** Max items one evidence-panel request may fetch. */
+export const EVIDENCE_LIMIT = 100;
+
+/**
+ * The real records behind a chart element (US-009 evidence panel). Only public rows and this
+ * brand's own licensed rows (FR-8), checked in the query and again here; unknown ids are skipped.
+ */
+export async function loadItemsByIds(db: TrendDb, brandId: string, ids: number[]): Promise<TrendItem[]> {
+  if (!UUID.test(brandId)) throw new Error("loadItemsByIds: brandId must be a uuid");
+  const wanted = [...new Set(ids.filter((id) => Number.isSafeInteger(id) && id > 0))].slice(0, EVIDENCE_LIMIT);
+  if (!wanted.length) return [];
+  const { data, error } = await db.from("trend_items").select("*").in("id", wanted).or(`brand_id.is.null,brand_id.eq.${brandId}`);
+  if (error) throw new Error(`loadItemsByIds: ${error.message}`);
+  const byId = new Map((data ?? []).map(toItem).filter((i) => i.brand_id === null || i.brand_id === brandId).map((i) => [i.id, i]));
+  // keep the order the chart listed them in
+  return wanted.map((id) => byId.get(id)).filter((i): i is TrendItem => !!i);
+}
+
+/** Numeric columns arrive as strings from PostgREST; normalize to the contract. */
+function toItem(r: unknown): TrendItem {
+  const row = r as TrendItem & { id: number | string; price: number | string | null };
+  return { ...row, id: Number(row.id), price: row.price === null ? null : Number(row.price), attributes: row.attributes ?? {}, metrics: row.metrics ?? {} };
 }

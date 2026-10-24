@@ -6,7 +6,7 @@
 import { DEMO_BRAND_ID, sampleBrandProfile, sampleTrendItems, sampleWeights } from "../contracts/fixtures";
 import type { QuestionIntent, TrendItem, Weights } from "../contracts/types";
 import { effectiveWeights, filterItems, itemIdFromFeedbackKey, rankItems, runQuery, type MatchContext } from "./matcher";
-import { loadCandidates, type TrendDb } from "./trend-store";
+import { loadCandidates, loadItemsByIds, type TrendDb } from "./trend-store";
 
 const NOW = new Date("2026-10-24T12:00:00Z");
 const OTHER_BRAND = "00000000-0000-4000-8000-000000000002";
@@ -105,13 +105,15 @@ expect("fixtures: sample items rank", rankItems(filterItems(sampleTrendItems, fi
 // 7. loadCandidates builds the right query and normalizes rows.
 const calls: string[] = [];
 type Q = ReturnType<ReturnType<TrendDb["from"]>["select"]>;
-const result = Promise.resolve({ data: [{ ...items[0], price: "22.00", metrics: null }] as unknown[], error: null });
+// the fake database returns whatever rows are queued, including rows the real filter would drop
+let queued: unknown[] = [{ ...items[0], price: "22.00", metrics: null }];
 const fakeQuery: Q = {
   or: (f) => (calls.push(`or ${f}`), fakeQuery),
+  in: (c, v) => (calls.push(`in ${c} ${v.join(",")}`), fakeQuery),
   gte: (c, v) => (calls.push(`gte ${c} ${v.slice(0, 10)}`), fakeQuery),
   order: () => fakeQuery,
   limit: () => fakeQuery,
-  then: (ok, fail) => result.then(ok, fail),
+  then: (ok, fail) => Promise.resolve({ data: queued, error: null }).then(ok, fail),
 };
 const db: TrendDb = { from: () => ({ select: (c) => (calls.push(`select ${c}`), fakeQuery) }) };
 const main = async () => {
@@ -121,6 +123,16 @@ const main = async () => {
   expect("loadCandidates: numeric price, empty metrics", rows[0].price === 22 && JSON.stringify(rows[0].metrics) === "{}");
   const rejected = await loadCandidates(db, "x),brand_id.not.is.null", null, NOW).then(() => false, () => true);
   expect("loadCandidates: refuses a non-uuid brand id", rejected);
+
+  // 8. Evidence panel lookup (US-009): order kept, other brands' licensed rows dropped even if returned.
+  calls.length = 0;
+  queued = [items[4], items[5], { ...items[6], id: "107" }, items[0]]; // items[5] is 106, another brand's licensed row
+  const ev = await loadItemsByIds(db, DEMO_BRAND_ID, [107, 106, 105, 105, 101, -1, 1.5]);
+  expect("evidence: order kept, duplicates and bad ids dropped", JSON.stringify(ev.map((i) => i.id)) === "[107,105,101]", JSON.stringify(ev.map((i) => i.id)));
+  expect("evidence: other brand's licensed row never returned", !ev.some((i) => i.id === 106));
+  expect("evidence: query scoped to public + own brand", calls.includes(`or brand_id.is.null,brand_id.eq.${DEMO_BRAND_ID}`) && calls.includes("in id 107,106,105,101"), calls.join(" | "));
+  expect("evidence: no ids → no query", (await loadItemsByIds(db, DEMO_BRAND_ID, [])).length === 0);
+  expect("evidence: refuses a non-uuid brand id", await loadItemsByIds(db, "nope", [1]).then(() => false, () => true));
   process.exit(bad ? 1 : 0);
 };
 main();

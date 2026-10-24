@@ -4,7 +4,7 @@
 // Covers the A3 "done when": 5 demo questions + 5 off-topic questions are handled
 // correctly by the keyword fallback, and any AI output is cleaned into a valid intent.
 
-import { checkIntent, loadQuestionVocab, normalizeIntent, readByKeywords, readQuestion, type AskJson, type QuestionVocab } from "./question-reader";
+import { checkIntent, loadQuestionVocab, normalizeIntent, readByKeywords, readQuestion, refineByKeywords, type AskJson, type QuestionVocab } from "./question-reader";
 
 // Small stand-in for data/curation until Blair's lists are merged.
 const fallbackVocab: QuestionVocab = {
@@ -91,6 +91,18 @@ const outNoSuggestion = normalizeIntent({ in_scope: false, suggestion: "" }, opt
 expect("normalize: out-of-scope always gets a suggestion", !outNoSuggestion.in_scope && !!outNoSuggestion.suggestion, JSON.stringify(outNoSuggestion));
 expect("normalize: garbage input still valid", checkIntent(normalizeIntent(null, opts), vocab).length === 0);
 
+// 3b. Follow-ups (US-009) without the AI: start from the earlier reading, change only what's stated.
+const base = readByKeywords("Which colors are gaining traction in dresses under $50 this month?", opts);
+const cheaper = refineByKeywords("only under $30", base, opts);
+expect("follow-up: new price replaces old, rest kept", cheaper.in_scope && cheaper.price_max === 30 && cheaper.categories.join() === "dresses" && cheaper.focus === "color" && cheaper.time_window_days === 30, JSON.stringify(cheaper));
+const skirts = refineByKeywords("what about skirts?", base, opts);
+expect("follow-up: new category replaces old, price kept", skirts.categories.join() === "skirts" && skirts.price_max === 50, JSON.stringify(skirts));
+const longer = refineByKeywords("and over the last 6 months", base, opts);
+expect("follow-up: window changed only when stated", longer.time_window_days === 180 && refineByKeywords("ok", base, opts).time_window_days === 30, JSON.stringify(longer));
+const off = refineByKeywords("forecast our sales next year", base, opts);
+expect("follow-up: unsupported ask still refused", !off.in_scope && !!off.suggestion, JSON.stringify(off));
+expect("follow-up: of an off-topic question is refused", !refineByKeywords("only under $30", readByKeywords("weather in Boston?", opts), opts).in_scope);
+
 // 4. readQuestion: AI path, AI failure → keywords, and input limits.
 const fakeAsk: AskJson = async (req) => {
   if (req.step !== "interpret" || req.schemaName !== "question_intent" || !req.system.includes("dresses")) throw new Error("bad request shape");
@@ -104,6 +116,14 @@ const main = async () => {
   expect("readQuestion: uses the AI answer", viaAi.via === "ai" && viaAi.intent.price_max === 50, JSON.stringify(viaAi));
   const viaKeywords = await readQuestion("Which colors are gaining traction in summer dresses under $50?", { ...opts, ask: failingAsk });
   expect("readQuestion: AI failure falls back to keywords", viaKeywords.via === "keywords" && viaKeywords.intent.in_scope && viaKeywords.intent.price_max === 50, JSON.stringify(viaKeywords));
+  let seen = { system: "", prompt: "" };
+  const spyAsk: AskJson = async (req) => {
+    seen = { system: req.system, prompt: req.prompt };
+    throw new Error("down");
+  };
+  const fu = await readQuestion("only under $30", { ...opts, ask: spyAsk, previous: { question: "Colors in dresses?", intent: base } });
+  expect("readQuestion follow-up: AI sees the earlier question and the follow-up rule", seen.prompt.includes("Earlier question: Colors in dresses?") && seen.prompt.includes("Follow-up: only under $30") && seen.system.includes("refining an earlier question"), JSON.stringify(seen).slice(0, 300));
+  expect("readQuestion follow-up: AI failure refines by keywords", fu.via === "keywords" && fu.intent.in_scope && fu.intent.price_max === 30 && fu.intent.categories.join() === "dresses", JSON.stringify(fu));
   const tooLong = await readQuestion("x".repeat(501), { ...opts, ask: fakeAsk });
   expect("readQuestion: over 500 characters refused politely", !tooLong.intent.in_scope && /500/.test(tooLong.intent.suggestion ?? ""), JSON.stringify(tooLong));
   const empty = await readQuestion("   ", { ...opts, ask: fakeAsk });
