@@ -89,7 +89,9 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
               {readSummary ? `Based on ${readSummary}. ` : ""}Check it and fix anything that&apos;s off; your trend digest is matched to this.
             </p>
           </div>
-          <ProfileEditor key={profile.updated_at} profile={profile} vocab={vocab} save={saveProfile.bind(null, id)} />
+          {/* Remount (fresh values) when a re-read finishes, but not on the founder's own save,
+              so the "Saved" message survives the refresh. */}
+          <ProfileEditor key={brand.crawl_status} profile={profile} vocab={vocab} save={saveProfile.bind(null, id)} />
           <form action={retry} className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
             <button type="submit" disabled={!!stage && stage !== "failed"} className="text-sm text-zinc-500 underline-offset-2 hover:underline disabled:opacity-50">
               Re-read my site (keeps your edits)
