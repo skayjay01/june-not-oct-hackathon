@@ -64,6 +64,30 @@ export interface TrendItem {
 
 // ---------- brands ----------
 
+export const SOCIAL_PLATFORMS = ["instagram", "tiktok", "pinterest", "facebook", "x", "youtube"] as const;
+export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
+
+/** Where a fact came from: the brand's own site (trusted), a web search (to confirm), or the founder. */
+export type FoundSource = "site" | "search" | "you";
+
+/** What onboarding found about a brand from its name alone, before asking the founder anything. */
+export interface BrandPresence {
+  /** the name as the brand writes it */
+  name: string;
+  /** null = not found, so onboarding must ask */
+  website: string | null;
+  website_source: FoundSource | null;
+  /** we opened the homepage and it is this brand's */
+  website_checked: boolean;
+  /** the site turned away our reader (big retailers often do), so its pages may not crawl */
+  website_blocked: boolean;
+  socials: Partial<Record<SocialPlatform, { url: string; handle: string; source: FoundSource }>>;
+  /** one line on who the brand is, so the founder can tell we found the right one */
+  description: string | null;
+  /** other brands with a similar name, for "Not you?" */
+  alternatives: { name: string; website: string }[];
+}
+
 /** One row of `brand_profiles` (US-002). */
 export interface BrandProfile {
   brand_id: string;
@@ -226,6 +250,8 @@ export interface Engine {
   rerankDashboard(brandId: string, spec: DashboardSpec, weights: Pick<Weights, WeightDimension>): Promise<DashboardSpec>;
   /** the real items behind a chart element, for the evidence panel (US-009); never another brand's licensed rows */
   getEvidence(brandId: string, itemIds: number[]): Promise<TrendItem[]>;
+  /** onboarding: a brand's website and social accounts from its name (and its website, if the founder gave one) */
+  findBrand(name: string, website?: string): Promise<BrandPresence>;
 }
 
 /** Data + delivery (owner Yizhi), called by the engine and the scheduler. */

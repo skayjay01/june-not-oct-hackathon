@@ -22,8 +22,9 @@ function Welcome() {
       <div className="flex flex-col gap-4">
         <h1 className="text-3xl font-semibold tracking-tight">Ask-a-Trend</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          An AI trend scout for small fashion brands. Give us your website and we&apos;ll learn your style in a couple of
-          minutes, then send you on-trend ideas that fit it. You can edit the profile before anything is sent.
+          An AI trend scout for small fashion brands. Tell us your brand name. We&apos;ll find your website and social
+          accounts, learn your style in a couple of minutes, then send you on-trend ideas that fit it. You can edit the
+          profile before anything is sent.
         </p>
       </div>
       <OnboardForm />

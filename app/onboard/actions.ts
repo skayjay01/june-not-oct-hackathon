@@ -2,11 +2,21 @@
 
 import { after } from "next/server";
 import { redirect } from "next/navigation";
+import { SOCIAL_PLATFORMS, type BrandPresence } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
+import { engine } from "@/lib/engine";
+import { socialFromUrl, socialLink } from "@/lib/engine/brand-finder";
 import { runOnboarding } from "@/lib/sources/onboard-brand";
 import { rememberBrand } from "@/app/current-brand";
 
 export type OnboardState = { errors: Record<string, string>; values: Record<string, string> };
+
+/** Step 1: look the brand up from its name (and website, if given) before asking anything else. */
+export async function findBrand(name: string, website?: string): Promise<BrandPresence | { error: string }> {
+  const n = name.trim().slice(0, 120);
+  if (!n) return { error: "Enter your brand name." };
+  return engine.findBrand(n, website?.trim().slice(0, 300) || undefined);
+}
 
 const CHANNELS = ["email", "slack", "whatsapp"] as const;
 const FREQUENCIES = ["daily", "weekly"] as const;
@@ -24,8 +34,9 @@ function httpUrl(raw: string): string | null {
 
 export async function createBrand(_prev: OnboardState, form: FormData): Promise<OnboardState> {
   const get = (k: string) => String(form.get(k) ?? "").trim();
+  const socialKeys = SOCIAL_PLATFORMS.map((p) => `social_${p}`);
   const values = Object.fromEntries(
-    ["name", "website", "instagram", "instagram_text", "extra_urls", "email", "slack_webhook", "channel", "frequency"].map((k) => [k, get(k)]),
+    ["name", "website", ...socialKeys, "instagram_text", "extra_urls", "email", "slack_webhook", "channel", "frequency"].map((k) => [k, get(k)]),
   );
   const errors: Record<string, string> = {};
 
@@ -33,8 +44,16 @@ export async function createBrand(_prev: OnboardState, form: FormData): Promise<
   if (!values.name) errors.name = "Enter your brand name.";
   if (!website) errors.website = "Enter your website address, like yourbrand.com.";
 
-  const instagram = values.instagram.replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/.*$/, "");
-  if (instagram && !/^[A-Za-z0-9._]{1,30}$/.test(instagram)) errors.instagram = "That doesn't look like an Instagram handle.";
+  // Accounts found for the founder (or typed by them): a handle or a link, one per platform.
+  const socialLinks: Record<string, string> = {};
+  for (const p of SOCIAL_PLATFORMS) {
+    const raw = values[`social_${p}`];
+    if (!raw) continue;
+    const link = socialLink(p, raw);
+    if (link) socialLinks[p] = link;
+    else errors[`social_${p}`] = "That doesn't look like an account on this site. Use @name or paste the profile link.";
+  }
+  const instagram = socialLinks.instagram ? (socialFromUrl(socialLinks.instagram)?.handle ?? "") : "";
 
   const extraLines = values.extra_urls.split(/\s+/).filter(Boolean);
   const extraUrls = extraLines.map(httpUrl);
@@ -57,6 +76,7 @@ export async function createBrand(_prev: OnboardState, form: FormData): Promise<
       name: values.name,
       website_url: website,
       instagram_handle: instagram || null,
+      social_links: socialLinks,
       extra_urls: extraUrls,
       email: values.email || null,
       slack_webhook_url: values.slack_webhook || null,
