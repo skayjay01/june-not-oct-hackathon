@@ -37,7 +37,6 @@ async function Workspace({ brand }: { brand: CurrentBrand }) {
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">Ask-a-Trend</p>
         <h1 className="text-3xl font-semibold tracking-tight">{brand.name}</h1>
         <div className="flex flex-wrap gap-4 text-sm">
           <Link href={`/brands/${brand.id}`} className="underline underline-offset-2">
