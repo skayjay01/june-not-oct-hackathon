@@ -16,6 +16,7 @@ export type ShopifyProduct = {
   created_at: string;
   images: { src: string; alt: string | null }[];
   variants: { price: string }[];
+  options?: { name: string; values: string[] }[];
 };
 
 export type StoreProduct = {
@@ -24,6 +25,8 @@ export type StoreProduct = {
   title: string;
   description: string;
   productType: string;
+  vendor: string;
+  colorValues: string[];
   tags: string[];
   imageUrl: string | null;
   imageAlts: string[];
@@ -61,6 +64,8 @@ export async function fetchShopifyProducts(
         title: p.title,
         description: htmlToText(p.body_html ?? ""),
         productType: p.product_type,
+        vendor: p.vendor,
+        colorValues: (p.options ?? []).filter((o) => /colou?r/i.test(o.name)).flatMap((o) => o.values),
         tags: (Array.isArray(p.tags) ? p.tags : p.tags.split(",")).map((t) => t.trim()).filter(isStyleTag),
         imageUrl: p.images[0]?.src ?? null,
         imageAlts: p.images.map((i) => i.alt ?? "").filter(Boolean),
