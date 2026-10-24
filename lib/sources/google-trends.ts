@@ -66,6 +66,22 @@ export function summarize(points: { value: number }[]) {
   };
 }
 
+/** A keywords.csv row's maps_to_type / maps_to_id as a trend row's category and attributes. */
+export function keywordTags(k: Record<string, string> | undefined, colorId: Map<string, string>): Pick<TrendRow, "category" | "attributes"> {
+  const maps = k?.maps_to_type ?? "";
+  const id = k?.maps_to_id ?? "";
+  return {
+    category: maps === "category" ? id : null,
+    attributes: {
+      ...(maps === "color" && colorId.has(id) ? { colors: [colorId.get(id)!] } : {}),
+      ...(maps === "style_tag" && id ? { style_tags: [id] } : {}),
+      ...(maps === "pattern" && id ? { pattern: id } : {}),
+      ...(maps === "material" && id ? { material: id } : {}),
+      ...(maps === "silhouette" && id ? { silhouette: id } : {}),
+    },
+  };
+}
+
 export async function collectGoogleTrends(now = new Date()): Promise<{ rows: TrendRow[]; files: number; unmatched: string[] }> {
   const files = (await readdir(SNAPSHOT_DIR).catch(() => [] as string[])).filter((f) => f.toLowerCase().endsWith(".csv"));
   const [keywords, colorList] = await Promise.all([
@@ -82,22 +98,15 @@ export async function collectGoogleTrends(now = new Date()): Promise<{ rows: Tre
     for (const s of parseTrendsCsv(await readFile(path.join(SNAPSHOT_DIR, f), "utf8"))) {
       const k = byKeyword.get(s.keyword);
       if (!k) unmatched.push(s.keyword);
-      const maps = k?.maps_to_type ?? "";
-      const id = k?.maps_to_id ?? "";
+      const { category, attributes } = keywordTags(k, colorId);
       rows.push({
         source: "google_trends",
         source_item_id: `${s.keyword}|${s.region}`,
         brand_id: null,
         type: "keyword",
         title: s.keyword,
-        category: maps === "category" ? id : null,
-        attributes: {
-          ...(maps === "color" && colorId.has(id) ? { colors: [colorId.get(id)!] } : {}),
-          ...(maps === "style_tag" && id ? { style_tags: [id] } : {}),
-          ...(maps === "pattern" && id ? { pattern: id } : {}),
-          ...(maps === "material" && id ? { material: id } : {}),
-          ...(maps === "silhouette" && id ? { silhouette: id } : {}),
-        },
+        category,
+        attributes,
         price: null,
         currency: null,
         image_url: null,

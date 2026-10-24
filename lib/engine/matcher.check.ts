@@ -111,6 +111,8 @@ const fakeQuery: Q = {
   or: (f) => (calls.push(`or ${f}`), fakeQuery),
   in: (c, v) => (calls.push(`in ${c} ${v.join(",")}`), fakeQuery),
   gte: (c, v) => (calls.push(`gte ${c} ${v.slice(0, 10)}`), fakeQuery),
+  eq: (c, v) => (calls.push(`eq ${c} ${v}`), fakeQuery),
+  neq: (c, v) => (calls.push(`neq ${c} ${v}`), fakeQuery),
   order: () => fakeQuery,
   limit: () => fakeQuery,
   then: (ok, fail) => Promise.resolve({ data: queued, error: null }).then(ok, fail),
@@ -119,6 +121,7 @@ const db: TrendDb = { from: () => ({ select: (c) => (calls.push(`select ${c}`), 
 const main = async () => {
   const rows = await loadCandidates(db, DEMO_BRAND_ID, { time_window_days: 30 }, NOW);
   expect("loadCandidates: public + own brand only", calls.includes(`or brand_id.is.null,brand_id.eq.${DEMO_BRAND_ID}`), calls.join(" | "));
+  expect("loadCandidates: products and other signals read separately", calls.includes("eq type product") && calls.includes("neq type product"), calls.join(" | "));
   expect("loadCandidates: time window", calls.includes("gte collected_at 2026-09-24"), calls.join(" | "));
   expect("loadCandidates: numeric price, empty metrics", rows[0].price === 22 && JSON.stringify(rows[0].metrics) === "{}");
   const rejected = await loadCandidates(db, "x),brand_id.not.is.null", null, NOW).then(() => false, () => true);
