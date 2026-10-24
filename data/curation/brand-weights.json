@@ -1,5 +1,5 @@
 {
-  "version": "0.2",
+  "version": "0.3",
   "owner": "Blair (Workstream C)",
   "note": "How much each reference brand's runway and Lyst signals count when the matcher ranks trends. Set by Blair 2026-10-24. Multipliers apply to a signal's score; 1.0 is neutral. Signal ids point to editorial-signals.csv.",
   "brands": [
@@ -35,9 +35,6 @@
     "material": {
       "Prada": 2.0
     },
-    "jacket": {
-      "Prada": 2.0
-    },
     "bottoms": {
       "Prada": 2.0
     },
@@ -49,13 +46,49 @@
     },
     "decoration": {
       "Prada": 2.0
+    },
+    "jacket": {
+      "Prada": 2.0,
+      "Saint Laurent": 2.0
+    },
+    "bag": {
+      "Chanel": 2.0,
+      "Miu Miu": 2.0
     }
   },
   "cross_check": {
-    "brand": "Prada",
-    "against": [
+    "lead_houses": {
+      "color": [
+        "Prada"
+      ],
+      "material": [
+        "Prada"
+      ],
+      "bottoms": [
+        "Prada"
+      ],
+      "shoes": [
+        "Prada"
+      ],
+      "pattern": [
+        "Prada"
+      ],
+      "decoration": [
+        "Prada"
+      ],
+      "jacket": [
+        "Prada",
+        "Saint Laurent"
+      ],
+      "bag": [
+        "Chanel",
+        "Miu Miu"
+      ]
+    },
+    "check_houses": [
       "Chanel",
-      "Miu Miu"
+      "Miu Miu",
+      "Saint Laurent"
     ],
     "dimensions": [
       "color",
@@ -64,19 +97,10 @@
       "bottoms",
       "shoes",
       "pattern",
-      "decoration"
+      "decoration",
+      "bag"
     ],
-    "rule": "A Prada signal is weighted by how many of the check houses (Chanel, Miu Miu) show the same trend in the same season. Both agree: 2.5. Chanel agrees: 2.0 (Blair's original rule). Miu Miu agrees, or a partial match: 1.5. Prada only: 1.0. Trends Prada does not show are not weighted up, but 'chanel_miumiu' rows are kept as a watch list.",
-    "status_multiplier": {
-      "all_three": 2.5,
-      "prada_chanel": 2.0,
-      "prada_miumiu": 1.5,
-      "partial": 1.5,
-      "prada_only": 1.0,
-      "chanel_miumiu": 1.0,
-      "chanel_only": 1.0,
-      "miumiu_only": 1.0
-    },
+    "rule": "Prada signals (all dimensions except bags): 1.0, plus 1.0 if Chanel agrees, plus 0.5 each if Miu Miu or Saint Laurent agrees (max 3.0); a partial match is 1.5. Jackets and outerwear (leather jacket, trench, jacket shape): Saint Laurent signals are 2.0, or 2.5 if Prada agrees. Bags (shape and color): Chanel or Miu Miu signals are 2.0, or 2.5 when both agree; other houses' bags are 1.0. Signals no lead house shows stay at 1.0 and are kept as a watch list. Every row's 'weight' field is computed from these rules.",
     "results": [
       {
         "season": "SS27",
@@ -85,7 +109,13 @@
         "prada": "prada-ss27-shoes",
         "chanel": "chanel-ss27-shoes",
         "miu_miu": "miumiu-ss27-bows",
-        "status": "all_three"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 2.5
       },
       {
         "season": "SS27",
@@ -94,7 +124,13 @@
         "prada": "prada-ss27-lingerie",
         "chanel": "chanel-ss27-lingerie",
         "miu_miu": "miumiu-ss27-lingerie",
-        "status": "all_three"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 2.5
       },
       {
         "season": "SS27",
@@ -103,7 +139,13 @@
         "prada": "prada-ss27-sheer",
         "chanel": "chanel-ss27-sheer",
         "miu_miu": "miumiu-ss27-fabrics",
-        "status": "all_three"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 2.5
       },
       {
         "season": "SS27",
@@ -112,8 +154,13 @@
         "prada": "prada-ss27-skirts",
         "chanel": "chanel-ss27-skirts",
         "miu_miu": null,
-        "status": "prada_chanel",
-        "why": "Chanel's are knee-length and low-slung; Prada's are high-slit. Miu Miu showed pencil skirts the season before (FW26)."
+        "why": "Chanel's are knee-length and low-slung; Prada's are high-slit. Miu Miu showed pencil skirts the season before (FW26).",
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel"
+        ],
+        "weight": 2.0
       },
       {
         "season": "SS27",
@@ -122,7 +169,12 @@
         "prada": "prada-ss27-shoes",
         "chanel": "chanel-ss27-shoes",
         "miu_miu": null,
-        "status": "prada_chanel"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel"
+        ],
+        "weight": 2.0
       },
       {
         "season": "SS27",
@@ -131,8 +183,13 @@
         "prada": "prada-ss27-green",
         "chanel": "green-ss27",
         "miu_miu": null,
-        "status": "prada_chanel",
-        "why": "Miu Miu SS27 colors not reported"
+        "why": "Miu Miu SS27 colors not reported",
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel"
+        ],
+        "weight": 2.0
       },
       {
         "season": "SS27",
@@ -141,7 +198,12 @@
         "prada": "prada-ss27-shirting",
         "chanel": "chanel-ss27-shirting",
         "miu_miu": null,
-        "status": "prada_chanel"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel"
+        ],
+        "weight": 2.0
       },
       {
         "season": "SS27",
@@ -150,7 +212,13 @@
         "prada": "prada-ss27-embellish",
         "chanel": "chanel-ss27-sequin",
         "miu_miu": null,
-        "status": "prada_chanel"
+        "saint_laurent": "sl-metallics-ss27",
+        "houses": [
+          "Prada",
+          "Chanel",
+          "Saint Laurent"
+        ],
+        "weight": 2.5
       },
       {
         "season": "SS27",
@@ -159,7 +227,12 @@
         "prada": "prada-ss27-skirts",
         "chanel": null,
         "miu_miu": "miumiu-ss27-pleats",
-        "status": "prada_miumiu"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Miu Miu"
+        ],
+        "weight": 1.5
       },
       {
         "season": "SS27",
@@ -168,8 +241,13 @@
         "prada": "prada-ss27-satin",
         "chanel": null,
         "miu_miu": "miumiu-ss27-fabrics",
-        "status": "prada_miumiu",
-        "why": "Chanel shows silk transparencies, a related finish"
+        "why": "Chanel shows silk transparencies, a related finish",
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Miu Miu"
+        ],
+        "weight": 1.5
       },
       {
         "season": "SS27",
@@ -178,8 +256,13 @@
         "prada": "prada-ss27-leather",
         "chanel": null,
         "miu_miu": "miumiu-ss27-fabrics",
-        "status": "prada_miumiu",
-        "why": "Chanel's leather is accessories only"
+        "why": "Chanel's leather is accessories only",
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Miu Miu"
+        ],
+        "weight": 1.5
       },
       {
         "season": "SS27",
@@ -188,8 +271,13 @@
         "prada": null,
         "chanel": "chanel-ss27-jacket",
         "miu_miu": "miumiu-ss27-jacket",
-        "status": "chanel_miumiu",
-        "why": "Prada went the other way: oversized leather jackets"
+        "why": "Prada went the other way: oversized leather jackets",
+        "saint_laurent": null,
+        "houses": [
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -198,7 +286,11 @@
         "prada": "prada-ss27-jacket",
         "chanel": null,
         "miu_miu": null,
-        "status": "prada_only"
+        "saint_laurent": null,
+        "houses": [
+          "Prada"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -207,8 +299,12 @@
         "prada": "prada-ss27-florals",
         "chanel": null,
         "miu_miu": null,
-        "status": "prada_only",
-        "why": "Trendalytics reports artistic florals +169% for FW26"
+        "why": "Trendalytics reports artistic florals +169% for FW26",
+        "saint_laurent": null,
+        "houses": [
+          "Prada"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -217,7 +313,11 @@
         "prada": "prada-ss27-yellow",
         "chanel": null,
         "miu_miu": null,
-        "status": "prada_only"
+        "saint_laurent": null,
+        "houses": [
+          "Prada"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -226,7 +326,11 @@
         "prada": "prada-ss27-red",
         "chanel": null,
         "miu_miu": null,
-        "status": "prada_only"
+        "saint_laurent": null,
+        "houses": [
+          "Prada"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -235,7 +339,11 @@
         "prada": "prada-ss27-grey",
         "chanel": null,
         "miu_miu": null,
-        "status": "prada_only"
+        "saint_laurent": null,
+        "houses": [
+          "Prada"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -244,8 +352,12 @@
         "prada": null,
         "chanel": null,
         "miu_miu": "miumiu-ss27-sneaker",
-        "status": "miumiu_only",
-        "why": "530 SL (SS26) has a flat, ultra-thin sole; the SS27 RC150 is a slim runner. Lyst credits the New Balance collab with lifting Miu Miu searches."
+        "why": "530 SL (SS26) has a flat, ultra-thin sole; the SS27 RC150 is a slim runner. Lyst credits the New Balance collab with lifting Miu Miu searches.",
+        "saint_laurent": null,
+        "houses": [
+          "Miu Miu"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -254,8 +366,12 @@
         "prada": null,
         "chanel": null,
         "miu_miu": "miumiu-ss27-denim",
-        "status": "miumiu_only",
-        "why": "FashionUnited reports denim at about 7% of SS27 runway looks"
+        "why": "FashionUnited reports denim at about 7% of SS27 runway looks",
+        "saint_laurent": null,
+        "houses": [
+          "Miu Miu"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -264,8 +380,12 @@
         "prada": null,
         "chanel": "chanel-ss27-belts",
         "miu_miu": null,
-        "status": "chanel_only",
-        "why": "Also at Chanel FW26"
+        "why": "Also at Chanel FW26",
+        "saint_laurent": null,
+        "houses": [
+          "Chanel"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -274,8 +394,12 @@
         "prada": null,
         "chanel": "chanel-ss27-zebra",
         "miu_miu": null,
-        "status": "chanel_only",
-        "why": "Trendalytics reports animal stripes +49%"
+        "why": "Trendalytics reports animal stripes +49%",
+        "saint_laurent": null,
+        "houses": [
+          "Chanel"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -284,7 +408,11 @@
         "prada": null,
         "chanel": "orange-ss27",
         "miu_miu": null,
-        "status": "chanel_only"
+        "saint_laurent": null,
+        "houses": [
+          "Chanel"
+        ],
+        "weight": 1.0
       },
       {
         "season": "SS27",
@@ -293,7 +421,11 @@
         "prada": null,
         "chanel": "chanel-ss27-tweed",
         "miu_miu": null,
-        "status": "chanel_only"
+        "saint_laurent": null,
+        "houses": [
+          "Chanel"
+        ],
+        "weight": 1.0
       },
       {
         "season": "FW26",
@@ -302,7 +434,13 @@
         "prada": "prada-fw26-embroidery",
         "chanel": "chanel-fw26-embroidery",
         "miu_miu": "miumiu-fw26-decor",
-        "status": "all_three"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 2.5
       },
       {
         "season": "FW26",
@@ -311,7 +449,13 @@
         "prada": "prada-fw26-sheer",
         "chanel": "chanel-fw26-sheer",
         "miu_miu": "miumiu-fw26-decor",
-        "status": "all_three"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 2.5
       },
       {
         "season": "FW26",
@@ -320,7 +464,13 @@
         "prada": "prada-fw26-knit",
         "chanel": "chanel-fw26-knit",
         "miu_miu": "miumiu-fw26-fabrics",
-        "status": "all_three"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 2.5
       },
       {
         "season": "FW26",
@@ -329,7 +479,12 @@
         "prada": "prada-fw26-sequin",
         "chanel": "chanel-fw26-metallic",
         "miu_miu": null,
-        "status": "prada_chanel"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel"
+        ],
+        "weight": 2.0
       },
       {
         "season": "FW26",
@@ -338,7 +493,12 @@
         "prada": "prada-fw26-shoes",
         "chanel": null,
         "miu_miu": "miumiu-fw26-shoes",
-        "status": "prada_miumiu"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Miu Miu"
+        ],
+        "weight": 1.5
       },
       {
         "season": "FW26",
@@ -347,8 +507,13 @@
         "prada": "prada-fw26-shoes",
         "chanel": null,
         "miu_miu": "miumiu-fw26-shoes",
-        "status": "prada_miumiu",
-        "why": "Prada chunky loafers; Miu Miu bubble soles revived from its early-2000s archive"
+        "why": "Prada chunky loafers; Miu Miu bubble soles revived from its early-2000s archive",
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Miu Miu"
+        ],
+        "weight": 1.5
       },
       {
         "season": "FW26",
@@ -357,7 +522,13 @@
         "prada": "prada-fw26-jacket",
         "chanel": null,
         "miu_miu": "miumiu-fw26-jacket",
-        "status": "prada_miumiu"
+        "saint_laurent": "sl-fw26-fur",
+        "houses": [
+          "Prada",
+          "Miu Miu",
+          "Saint Laurent"
+        ],
+        "weight": 2.5
       },
       {
         "season": "FW26",
@@ -366,7 +537,12 @@
         "prada": "prada-fw26-bottoms",
         "chanel": null,
         "miu_miu": "miumiu-fw26-bottoms",
-        "status": "prada_miumiu"
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Miu Miu"
+        ],
+        "weight": 1.5
       },
       {
         "season": "FW26",
@@ -376,7 +552,14 @@
         "chanel": "buttercream-fw26",
         "miu_miu": "miumiu-fw26-color",
         "status": "partial",
-        "why": "Same direction, different shades: Prada acid yellow, Chanel buttercream, Miu Miu lime green"
+        "why": "Same direction, different shades: Prada acid yellow, Chanel buttercream, Miu Miu lime green",
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 1.5
       },
       {
         "season": "FW26",
@@ -385,7 +568,12 @@
         "prada": null,
         "chanel": "chanel-fw26-jacket",
         "miu_miu": "miumiu-fw26-jacket",
-        "status": "chanel_miumiu"
+        "saint_laurent": null,
+        "houses": [
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 1.0
       },
       {
         "season": "FW26",
@@ -394,7 +582,12 @@
         "prada": null,
         "chanel": "chanel-fw26-color",
         "miu_miu": "miumiu-fw26-color",
-        "status": "chanel_miumiu"
+        "saint_laurent": null,
+        "houses": [
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 1.0
       },
       {
         "season": "FW26",
@@ -403,7 +596,12 @@
         "prada": null,
         "chanel": "chanel-fw26-lace",
         "miu_miu": null,
-        "status": "chanel_only"
+        "saint_laurent": "sl-fw26-lace",
+        "houses": [
+          "Chanel",
+          "Saint Laurent"
+        ],
+        "weight": 1.0
       },
       {
         "season": "FW26",
@@ -412,7 +610,11 @@
         "prada": null,
         "chanel": "chanel-fw26-tweed",
         "miu_miu": null,
-        "status": "chanel_only"
+        "saint_laurent": null,
+        "houses": [
+          "Chanel"
+        ],
+        "weight": 1.0
       },
       {
         "season": "FW26",
@@ -421,14 +623,188 @@
         "prada": "creased-ease-fw26",
         "chanel": null,
         "miu_miu": "creased-ease-fw26",
-        "status": "prada_miumiu",
-        "why": "Also Dior and Diesel; Chanel's version is the stomped-on 2.55 bag (worn-look-spread)"
+        "why": "Also Dior and Diesel; Chanel's version is the stomped-on 2.55 bag (worn-look-spread)",
+        "saint_laurent": null,
+        "houses": [
+          "Prada",
+          "Miu Miu"
+        ],
+        "weight": 1.5
+      },
+      {
+        "season": "SS27",
+        "dimension": "jacket",
+        "trend": "Strong-shouldered leather jackets",
+        "prada": "prada-ss27-jacket",
+        "chanel": null,
+        "miu_miu": null,
+        "saint_laurent": "sl-ss27-jackets",
+        "why": "Prada oversized, Saint Laurent strong shoulders with a narrow waist",
+        "houses": [
+          "Prada",
+          "Saint Laurent"
+        ],
+        "weight": 2.5
+      },
+      {
+        "season": "SS27",
+        "dimension": "jacket",
+        "trend": "Trench coats",
+        "prada": null,
+        "chanel": null,
+        "miu_miu": null,
+        "saint_laurent": "sl-ss27-trench",
+        "why": "Also vinyl and silicone trenches at Saint Laurent FW26",
+        "houses": [
+          "Saint Laurent"
+        ],
+        "weight": 2.0
+      },
+      {
+        "season": "FW26",
+        "dimension": "jacket",
+        "trend": "Double-breasted tailoring",
+        "prada": null,
+        "chanel": null,
+        "miu_miu": null,
+        "saint_laurent": "sl-fw26-tailoring",
+        "why": "Blair saw double-breasted pieces at Zara (zara-double-breasted)",
+        "houses": [
+          "Saint Laurent"
+        ],
+        "weight": 2.0
+      },
+      {
+        "season": "2026",
+        "dimension": "jacket",
+        "trend": "Stand-up collar bombers and suede jackets",
+        "prada": null,
+        "chanel": null,
+        "miu_miu": null,
+        "saint_laurent": "sl-bomber-suede-blair",
+        "why": "Blair's call, backed by a 2025 Saint Laurent suede bomber (sl-suede-bomber-2025); seen at Zara",
+        "houses": [
+          "Saint Laurent"
+        ],
+        "weight": 2.0
+      },
+      {
+        "season": "FW26",
+        "dimension": "color",
+        "trend": "Chocolate brown and burnt orange",
+        "prada": null,
+        "chanel": null,
+        "miu_miu": null,
+        "saint_laurent": "sl-fw26-colors",
+        "why": "Trendalytics reports deep brown +50% (deep-brown-fw26)",
+        "houses": [
+          "Saint Laurent"
+        ],
+        "weight": 1.0
+      },
+      {
+        "season": "SS27",
+        "dimension": "bag",
+        "trend": "Crochet bags",
+        "prada": null,
+        "chanel": "chanel-ss27-bag-details",
+        "miu_miu": "miumiu-crochet-bags",
+        "saint_laurent": null,
+        "houses": [
+          "Chanel",
+          "Miu Miu"
+        ],
+        "weight": 2.5
+      },
+      {
+        "season": "SS27",
+        "dimension": "bag",
+        "trend": "Chain flap bags",
+        "prada": null,
+        "chanel": "chanel-ss27-bags",
+        "miu_miu": null,
+        "saint_laurent": null,
+        "houses": [
+          "Chanel"
+        ],
+        "weight": 2.0
+      },
+      {
+        "season": "SS27",
+        "dimension": "bag",
+        "trend": "Bright-colored bags",
+        "prada": "prada-ss27-bags",
+        "chanel": "chanel-ss27-bag-details",
+        "miu_miu": null,
+        "saint_laurent": null,
+        "why": "Prada's banana yellow and turquoise coin purses",
+        "houses": [
+          "Prada",
+          "Chanel"
+        ],
+        "weight": 2.0
+      },
+      {
+        "season": "SS27",
+        "dimension": "bag",
+        "trend": "Mini bags and purses",
+        "prada": "prada-ss27-bags",
+        "chanel": "chanel-ss27-bags",
+        "miu_miu": null,
+        "saint_laurent": null,
+        "why": "Prada coin purses; Chanel birdcage minaudière",
+        "houses": [
+          "Prada",
+          "Chanel"
+        ],
+        "weight": 2.0
+      },
+      {
+        "season": "SS27",
+        "dimension": "bag",
+        "trend": "East-west bags with oversized straps",
+        "prada": "prada-ss27-bags",
+        "chanel": null,
+        "miu_miu": null,
+        "saint_laurent": null,
+        "houses": [
+          "Prada"
+        ],
+        "weight": 1.0
+      },
+      {
+        "season": "2026",
+        "dimension": "bag",
+        "trend": "Distorted, worn bags",
+        "prada": null,
+        "chanel": "chanel-stomped-255",
+        "miu_miu": null,
+        "saint_laurent": null,
+        "why": "Coach sells pre-scuffed bags (worn-look-spread)",
+        "houses": [
+          "Chanel"
+        ],
+        "weight": 2.0
+      },
+      {
+        "season": "FW26",
+        "dimension": "bag",
+        "trend": "Studded leather bags",
+        "prada": null,
+        "chanel": null,
+        "miu_miu": "miumiu-fw26-bags",
+        "saint_laurent": null,
+        "houses": [
+          "Miu Miu"
+        ],
+        "weight": 2.0
       }
     ]
   },
   "assumptions": [
-    "'More weight' for Prada read as 2x when Chanel confirms; Miu Miu agreement adds 0.5.",
+    "Multipliers (2.0 / +0.5 / 2.5 / 3.0) are Claude's proposal for Blair's direction 'more weight'; change here to adjust.",
     "'Equal weight' means 1.0 for every demo brand on all other dimensions.",
-    "Design dimensions (jacket, bottoms, shoes, pattern, decoration) added 2026-10-24 at Blair's request."
+    "Saint Laurent added 2026-10-24 for jacket, leather jacket and trench shape; bags led by Chanel and Miu Miu added the same day.",
+    "Rows from 'blair_observation' signals reflect Blair's own expert read and have no published source yet."
   ]
 }
