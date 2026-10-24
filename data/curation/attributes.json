@@ -1,90 +1,411 @@
 {
-  "version": "0.1-draft",
+  "version": "0.2",
   "owner": "Blair (Workstream C)",
-  "note": "Attribute vocabularies for Trend library items. Matches the TrendItem fields: silhouette, material, pattern, plus details. Use 'id' in data; 'label' in the UI.",
+  "note": "Attribute vocabularies for Trend library items. Matches the TrendItem fields: silhouette, material, pattern, plus details. Use 'id' in data; 'label' in the UI. 'shoe_shapes' added 2026-10-24 for footwear design trends.",
   "silhouettes": [
-    { "id": "oversized", "label": "Oversized" },
-    { "id": "boxy", "label": "Boxy" },
-    { "id": "fitted", "label": "Fitted / bodycon" },
-    { "id": "a-line", "label": "A-line" },
-    { "id": "column", "label": "Column" },
-    { "id": "drop-waist", "label": "Drop waist" },
-    { "id": "empire", "label": "Empire waist" },
-    { "id": "wrap", "label": "Wrap" },
-    { "id": "bubble", "label": "Bubble / balloon" },
-    { "id": "peplum", "label": "Peplum" },
-    { "id": "cropped", "label": "Cropped" },
-    { "id": "mini", "label": "Mini length" },
-    { "id": "midi", "label": "Midi length" },
-    { "id": "maxi", "label": "Maxi length" },
-    { "id": "wide-leg", "label": "Wide leg" },
-    { "id": "barrel-leg", "label": "Barrel leg" },
-    { "id": "straight-leg", "label": "Straight leg" },
-    { "id": "flare", "label": "Flare / bootcut" },
-    { "id": "skinny", "label": "Skinny" },
-    { "id": "low-rise", "label": "Low rise" },
-    { "id": "high-rise", "label": "High rise" },
-    { "id": "strong-shoulder", "label": "Strong shoulder" },
-    { "id": "puff-sleeve", "label": "Puff sleeve" },
-    { "id": "asymmetric", "label": "Asymmetric" }
+    {
+      "id": "oversized",
+      "label": "Oversized"
+    },
+    {
+      "id": "boxy",
+      "label": "Boxy"
+    },
+    {
+      "id": "fitted",
+      "label": "Fitted / bodycon"
+    },
+    {
+      "id": "a-line",
+      "label": "A-line"
+    },
+    {
+      "id": "column",
+      "label": "Column"
+    },
+    {
+      "id": "drop-waist",
+      "label": "Drop waist"
+    },
+    {
+      "id": "empire",
+      "label": "Empire waist"
+    },
+    {
+      "id": "wrap",
+      "label": "Wrap"
+    },
+    {
+      "id": "bubble",
+      "label": "Bubble / balloon"
+    },
+    {
+      "id": "peplum",
+      "label": "Peplum"
+    },
+    {
+      "id": "cropped",
+      "label": "Cropped"
+    },
+    {
+      "id": "mini",
+      "label": "Mini length"
+    },
+    {
+      "id": "midi",
+      "label": "Midi length"
+    },
+    {
+      "id": "maxi",
+      "label": "Maxi length"
+    },
+    {
+      "id": "wide-leg",
+      "label": "Wide leg"
+    },
+    {
+      "id": "barrel-leg",
+      "label": "Barrel leg"
+    },
+    {
+      "id": "straight-leg",
+      "label": "Straight leg"
+    },
+    {
+      "id": "flare",
+      "label": "Flare / bootcut"
+    },
+    {
+      "id": "skinny",
+      "label": "Skinny"
+    },
+    {
+      "id": "low-rise",
+      "label": "Low rise"
+    },
+    {
+      "id": "high-rise",
+      "label": "High rise"
+    },
+    {
+      "id": "strong-shoulder",
+      "label": "Strong shoulder"
+    },
+    {
+      "id": "puff-sleeve",
+      "label": "Puff sleeve"
+    },
+    {
+      "id": "asymmetric",
+      "label": "Asymmetric"
+    },
+    {
+      "id": "knee-length",
+      "label": "Knee length"
+    },
+    {
+      "id": "bermuda",
+      "label": "Bermuda length"
+    },
+    {
+      "id": "blouson",
+      "label": "Blouson / short jacket"
+    },
+    {
+      "id": "collarless",
+      "label": "Collarless jacket"
+    }
   ],
   "materials": [
-    { "id": "cotton", "label": "Cotton" },
-    { "id": "poplin", "label": "Poplin" },
-    { "id": "linen", "label": "Linen" },
-    { "id": "denim", "label": "Denim" },
-    { "id": "silk", "label": "Silk" },
-    { "id": "satin", "label": "Satin" },
-    { "id": "chiffon", "label": "Chiffon" },
-    { "id": "sheer", "label": "Sheer / mesh" },
-    { "id": "lace", "label": "Lace" },
-    { "id": "tulle", "label": "Tulle" },
-    { "id": "wool", "label": "Wool" },
-    { "id": "cashmere", "label": "Cashmere" },
-    { "id": "mohair", "label": "Mohair" },
-    { "id": "tweed", "label": "Tweed / bouclé" },
-    { "id": "corduroy", "label": "Corduroy" },
-    { "id": "velvet", "label": "Velvet" },
-    { "id": "jersey", "label": "Jersey" },
-    { "id": "rib-knit", "label": "Rib knit" },
-    { "id": "crochet", "label": "Crochet" },
-    { "id": "leather", "label": "Leather" },
-    { "id": "faux-leather", "label": "Faux leather" },
-    { "id": "suede", "label": "Suede" },
-    { "id": "faux-fur", "label": "Faux fur / shearling" },
-    { "id": "nylon", "label": "Nylon / technical" },
-    { "id": "sequin", "label": "Sequin / metallic" }
+    {
+      "id": "cotton",
+      "label": "Cotton"
+    },
+    {
+      "id": "poplin",
+      "label": "Poplin"
+    },
+    {
+      "id": "linen",
+      "label": "Linen"
+    },
+    {
+      "id": "denim",
+      "label": "Denim"
+    },
+    {
+      "id": "silk",
+      "label": "Silk"
+    },
+    {
+      "id": "satin",
+      "label": "Satin"
+    },
+    {
+      "id": "chiffon",
+      "label": "Chiffon"
+    },
+    {
+      "id": "sheer",
+      "label": "Sheer / mesh"
+    },
+    {
+      "id": "lace",
+      "label": "Lace"
+    },
+    {
+      "id": "tulle",
+      "label": "Tulle"
+    },
+    {
+      "id": "wool",
+      "label": "Wool"
+    },
+    {
+      "id": "cashmere",
+      "label": "Cashmere"
+    },
+    {
+      "id": "mohair",
+      "label": "Mohair"
+    },
+    {
+      "id": "tweed",
+      "label": "Tweed / bouclé"
+    },
+    {
+      "id": "corduroy",
+      "label": "Corduroy"
+    },
+    {
+      "id": "velvet",
+      "label": "Velvet"
+    },
+    {
+      "id": "jersey",
+      "label": "Jersey"
+    },
+    {
+      "id": "rib-knit",
+      "label": "Rib knit"
+    },
+    {
+      "id": "crochet",
+      "label": "Crochet"
+    },
+    {
+      "id": "leather",
+      "label": "Leather"
+    },
+    {
+      "id": "faux-leather",
+      "label": "Faux leather"
+    },
+    {
+      "id": "suede",
+      "label": "Suede"
+    },
+    {
+      "id": "faux-fur",
+      "label": "Faux fur / shearling"
+    },
+    {
+      "id": "nylon",
+      "label": "Nylon / technical"
+    },
+    {
+      "id": "sequin",
+      "label": "Sequin / metallic"
+    },
+    {
+      "id": "waxed-cotton",
+      "label": "Waxed cotton"
+    }
   ],
   "patterns": [
-    { "id": "solid", "label": "Solid" },
-    { "id": "stripe", "label": "Stripe" },
-    { "id": "pinstripe", "label": "Pinstripe" },
-    { "id": "gingham", "label": "Gingham" },
-    { "id": "plaid", "label": "Plaid / tartan" },
-    { "id": "polka-dot", "label": "Polka dot" },
-    { "id": "floral", "label": "Floral" },
-    { "id": "ditsy-floral", "label": "Ditsy floral" },
-    { "id": "animal", "label": "Animal print" },
-    { "id": "leopard", "label": "Leopard" },
-    { "id": "paisley", "label": "Paisley" },
-    { "id": "abstract", "label": "Abstract" },
-    { "id": "geometric", "label": "Geometric" },
-    { "id": "graphic", "label": "Graphic / logo" },
-    { "id": "tie-dye", "label": "Tie-dye" },
-    { "id": "camo", "label": "Camouflage" }
+    {
+      "id": "solid",
+      "label": "Solid"
+    },
+    {
+      "id": "stripe",
+      "label": "Stripe"
+    },
+    {
+      "id": "pinstripe",
+      "label": "Pinstripe"
+    },
+    {
+      "id": "gingham",
+      "label": "Gingham"
+    },
+    {
+      "id": "plaid",
+      "label": "Plaid / tartan"
+    },
+    {
+      "id": "polka-dot",
+      "label": "Polka dot"
+    },
+    {
+      "id": "floral",
+      "label": "Floral"
+    },
+    {
+      "id": "ditsy-floral",
+      "label": "Ditsy floral"
+    },
+    {
+      "id": "animal",
+      "label": "Animal print"
+    },
+    {
+      "id": "leopard",
+      "label": "Leopard"
+    },
+    {
+      "id": "paisley",
+      "label": "Paisley"
+    },
+    {
+      "id": "abstract",
+      "label": "Abstract"
+    },
+    {
+      "id": "geometric",
+      "label": "Geometric"
+    },
+    {
+      "id": "graphic",
+      "label": "Graphic / logo"
+    },
+    {
+      "id": "tie-dye",
+      "label": "Tie-dye"
+    },
+    {
+      "id": "camo",
+      "label": "Camouflage"
+    }
   ],
   "details": [
-    { "id": "bow", "label": "Bows" },
-    { "id": "ruffle", "label": "Ruffles" },
-    { "id": "fringe", "label": "Fringe" },
-    { "id": "corset", "label": "Corset / boning" },
-    { "id": "drape", "label": "Draping" },
-    { "id": "cut-out", "label": "Cut-outs" },
-    { "id": "smocking", "label": "Smocking" },
-    { "id": "embroidery", "label": "Embroidery" },
-    { "id": "pleats", "label": "Pleats" },
-    { "id": "contrast-stitch", "label": "Contrast stitching" },
-    { "id": "hardware", "label": "Hardware / buckles" },
-    { "id": "distressed", "label": "Distressed" }
+    {
+      "id": "bow",
+      "label": "Bows"
+    },
+    {
+      "id": "ruffle",
+      "label": "Ruffles"
+    },
+    {
+      "id": "fringe",
+      "label": "Fringe"
+    },
+    {
+      "id": "corset",
+      "label": "Corset / boning"
+    },
+    {
+      "id": "drape",
+      "label": "Draping"
+    },
+    {
+      "id": "cut-out",
+      "label": "Cut-outs"
+    },
+    {
+      "id": "smocking",
+      "label": "Smocking"
+    },
+    {
+      "id": "embroidery",
+      "label": "Embroidery"
+    },
+    {
+      "id": "pleats",
+      "label": "Pleats"
+    },
+    {
+      "id": "contrast-stitch",
+      "label": "Contrast stitching"
+    },
+    {
+      "id": "hardware",
+      "label": "Hardware / buckles"
+    },
+    {
+      "id": "distressed",
+      "label": "Distressed"
+    },
+    {
+      "id": "lingerie-outerwear",
+      "label": "Lingerie as outerwear"
+    },
+    {
+      "id": "low-belt",
+      "label": "Low-slung belt"
+    },
+    {
+      "id": "crossed-lacing",
+      "label": "Crossed lacing"
+    },
+    {
+      "id": "feather",
+      "label": "Feathers"
+    },
+    {
+      "id": "fur-trim",
+      "label": "Fur trims and collars"
+    },
+    {
+      "id": "creased",
+      "label": "Creased / crumpled"
+    },
+    {
+      "id": "aged-finish",
+      "label": "Aged / worn finish"
+    }
+  ],
+  "shoe_shapes": [
+    {
+      "id": "slim-flat-sneaker",
+      "label": "Slim flat-sole sneaker"
+    },
+    {
+      "id": "chunky-sneaker",
+      "label": "Chunky sneaker"
+    },
+    {
+      "id": "bubble-sole",
+      "label": "Bubble / rounded sole"
+    },
+    {
+      "id": "knee-high-boot",
+      "label": "Knee-high boot"
+    },
+    {
+      "id": "pointed-pump",
+      "label": "Pointed pump"
+    },
+    {
+      "id": "kitten-heel",
+      "label": "Kitten heel"
+    },
+    {
+      "id": "chunky-loafer",
+      "label": "Chunky loafer"
+    },
+    {
+      "id": "mary-jane",
+      "label": "Mary Jane"
+    },
+    {
+      "id": "ballet-flat",
+      "label": "Ballet flat"
+    },
+    {
+      "id": "jelly",
+      "label": "Jelly shoe"
+    }
   ]
 }

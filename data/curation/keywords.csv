@@ -1,0 +1,37 @@
+keyword,maps_to_type,maps_to_id,demo_question,use_for,region
+green dress,color,GR,1,google_trends;pinterest,US
+emerald green dress,color,GR-08,1,google_trends;pinterest,US
+orange dress,color,OR,1,google_trends;pinterest,US
+tangerine dress,color,OR-04,1,google_trends,US
+butter yellow,color,butter-yellow,2,google_trends;pinterest,US
+butter yellow dress,color,butter-yellow,2,google_trends,US
+primary yellow,color,lemon,2,google_trends,US
+buttercream,color,buttercream,2,google_trends,US
+tartan skirt,pattern,plaid,3,google_trends;pinterest,US
+argyle sweater,pattern,geometric,3,google_trends;pinterest,US
+zebra print,pattern,animal,3,google_trends,US
+floral print dress,pattern,floral,3,google_trends,US
+preppy outfit,style_tag,preppy,4,google_trends;pinterest,US
+navy blazer,category,blazers,4,google_trends,US
+knit polo,category,knitwear,4,google_trends;pinterest,US
+pleated trousers,category,trousers,4,google_trends,US
+knicks hat,product,,5,google_trends,US
+team jersey outfit,style_tag,blokecore,5,google_trends;pinterest,US
+vintage football shirt,style_tag,blokecore,5,google_trends,US
+jelly shoes,category,flats,,google_trends;pinterest,US
+klein blue,color,klein-blue,,google_trends;pinterest,US
+royal purple,color,royal-purple,,google_trends,US
+burgundy,color,burgundy,,google_trends;pinterest,US
+chocolate brown,color,chocolate,,google_trends,US
+sheer dress,material,sheer,,google_trends;pinterest,US
+lace top,material,lace,,google_trends,US
+boucle jacket,material,tweed,,google_trends,US
+tweed jacket,material,tweed,,google_trends;pinterest,US
+faux fur coat,material,faux-fur,,google_trends,US
+sequin skirt,material,sequin,,google_trends;pinterest,US
+satin skirt,material,satin,,google_trends,US
+barrel leg jeans,silhouette,barrel-leg,,google_trends;pinterest,US
+straight leg jeans,silhouette,straight-leg,,google_trends,US
+pencil skirt,silhouette,fitted,,google_trends,US
+quiet luxury,style_tag,quiet-luxury,,google_trends;pinterest,US
+ugly chic,style_tag,ugly-chic,,google_trends,US

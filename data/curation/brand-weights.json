@@ -1,0 +1,434 @@
+{
+  "version": "0.2",
+  "owner": "Blair (Workstream C)",
+  "note": "How much each reference brand's runway and Lyst signals count when the matcher ranks trends. Set by Blair 2026-10-24. Multipliers apply to a signal's score; 1.0 is neutral. Signal ids point to editorial-signals.csv.",
+  "brands": [
+    {
+      "brand": "Miu Miu",
+      "weight": 1.0
+    },
+    {
+      "brand": "Prada",
+      "weight": 1.0
+    },
+    {
+      "brand": "Aimé Leon Dore",
+      "weight": 1.0
+    },
+    {
+      "brand": "Damson Madder",
+      "weight": 1.0
+    },
+    {
+      "brand": "Massimo Dutti",
+      "weight": 1.0
+    },
+    {
+      "brand": "Paloma Wool",
+      "weight": 1.0
+    }
+  ],
+  "dimension_overrides": {
+    "color": {
+      "Prada": 2.0
+    },
+    "material": {
+      "Prada": 2.0
+    },
+    "jacket": {
+      "Prada": 2.0
+    },
+    "bottoms": {
+      "Prada": 2.0
+    },
+    "shoes": {
+      "Prada": 2.0
+    },
+    "pattern": {
+      "Prada": 2.0
+    },
+    "decoration": {
+      "Prada": 2.0
+    }
+  },
+  "cross_check": {
+    "brand": "Prada",
+    "against": [
+      "Chanel",
+      "Miu Miu"
+    ],
+    "dimensions": [
+      "color",
+      "material",
+      "jacket",
+      "bottoms",
+      "shoes",
+      "pattern",
+      "decoration"
+    ],
+    "rule": "A Prada signal is weighted by how many of the check houses (Chanel, Miu Miu) show the same trend in the same season. Both agree: 2.5. Chanel agrees: 2.0 (Blair's original rule). Miu Miu agrees, or a partial match: 1.5. Prada only: 1.0. Trends Prada does not show are not weighted up, but 'chanel_miumiu' rows are kept as a watch list.",
+    "status_multiplier": {
+      "all_three": 2.5,
+      "prada_chanel": 2.0,
+      "prada_miumiu": 1.5,
+      "partial": 1.5,
+      "prada_only": 1.0,
+      "chanel_miumiu": 1.0,
+      "chanel_only": 1.0,
+      "miumiu_only": 1.0
+    },
+    "results": [
+      {
+        "season": "SS27",
+        "dimension": "decoration",
+        "trend": "Bows on shoes and tops",
+        "prada": "prada-ss27-shoes",
+        "chanel": "chanel-ss27-shoes",
+        "miu_miu": "miumiu-ss27-bows",
+        "status": "all_three"
+      },
+      {
+        "season": "SS27",
+        "dimension": "decoration",
+        "trend": "Lingerie as outerwear (bras, bralettes, underwear)",
+        "prada": "prada-ss27-lingerie",
+        "chanel": "chanel-ss27-lingerie",
+        "miu_miu": "miumiu-ss27-lingerie",
+        "status": "all_three"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Sheer and gauze layers",
+        "prada": "prada-ss27-sheer",
+        "chanel": "chanel-ss27-sheer",
+        "miu_miu": "miumiu-ss27-fabrics",
+        "status": "all_three"
+      },
+      {
+        "season": "SS27",
+        "dimension": "bottoms",
+        "trend": "Pencil skirts",
+        "prada": "prada-ss27-skirts",
+        "chanel": "chanel-ss27-skirts",
+        "miu_miu": null,
+        "status": "prada_chanel",
+        "why": "Chanel's are knee-length and low-slung; Prada's are high-slit. Miu Miu showed pencil skirts the season before (FW26)."
+      },
+      {
+        "season": "SS27",
+        "dimension": "shoes",
+        "trend": "Embellished pointed shoes with bows",
+        "prada": "prada-ss27-shoes",
+        "chanel": "chanel-ss27-shoes",
+        "miu_miu": null,
+        "status": "prada_chanel"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Green",
+        "prada": "prada-ss27-green",
+        "chanel": "green-ss27",
+        "miu_miu": null,
+        "status": "prada_chanel",
+        "why": "Miu Miu SS27 colors not reported"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Shirting",
+        "prada": "prada-ss27-shirting",
+        "chanel": "chanel-ss27-shirting",
+        "miu_miu": null,
+        "status": "prada_chanel"
+      },
+      {
+        "season": "SS27",
+        "dimension": "decoration",
+        "trend": "Crystal, sequin and bead embellishment",
+        "prada": "prada-ss27-embellish",
+        "chanel": "chanel-ss27-sequin",
+        "miu_miu": null,
+        "status": "prada_chanel"
+      },
+      {
+        "season": "SS27",
+        "dimension": "bottoms",
+        "trend": "Pleated skirts",
+        "prada": "prada-ss27-skirts",
+        "chanel": null,
+        "miu_miu": "miumiu-ss27-pleats",
+        "status": "prada_miumiu"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Satin",
+        "prada": "prada-ss27-satin",
+        "chanel": null,
+        "miu_miu": "miumiu-ss27-fabrics",
+        "status": "prada_miumiu",
+        "why": "Chanel shows silk transparencies, a related finish"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Leather",
+        "prada": "prada-ss27-leather",
+        "chanel": null,
+        "miu_miu": "miumiu-ss27-fabrics",
+        "status": "prada_miumiu",
+        "why": "Chanel's leather is accessories only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "jacket",
+        "trend": "Cropped jackets",
+        "prada": null,
+        "chanel": "chanel-ss27-jacket",
+        "miu_miu": "miumiu-ss27-jacket",
+        "status": "chanel_miumiu",
+        "why": "Prada went the other way: oversized leather jackets"
+      },
+      {
+        "season": "SS27",
+        "dimension": "jacket",
+        "trend": "Oversized leather jacket",
+        "prada": "prada-ss27-jacket",
+        "chanel": null,
+        "miu_miu": null,
+        "status": "prada_only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "pattern",
+        "trend": "Florals",
+        "prada": "prada-ss27-florals",
+        "chanel": null,
+        "miu_miu": null,
+        "status": "prada_only",
+        "why": "Trendalytics reports artistic florals +169% for FW26"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Yellow",
+        "prada": "prada-ss27-yellow",
+        "chanel": null,
+        "miu_miu": null,
+        "status": "prada_only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Bright red",
+        "prada": "prada-ss27-red",
+        "chanel": null,
+        "miu_miu": null,
+        "status": "prada_only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Grey base",
+        "prada": "prada-ss27-grey",
+        "chanel": null,
+        "miu_miu": null,
+        "status": "prada_only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "shoes",
+        "trend": "Slim flat-sole sneaker",
+        "prada": null,
+        "chanel": null,
+        "miu_miu": "miumiu-ss27-sneaker",
+        "status": "miumiu_only",
+        "why": "530 SL (SS26) has a flat, ultra-thin sole; the SS27 RC150 is a slim runner. Lyst credits the New Balance collab with lifting Miu Miu searches."
+      },
+      {
+        "season": "SS27",
+        "dimension": "bottoms",
+        "trend": "Slim jeans with cross-lacing",
+        "prada": null,
+        "chanel": null,
+        "miu_miu": "miumiu-ss27-denim",
+        "status": "miumiu_only",
+        "why": "FashionUnited reports denim at about 7% of SS27 runway looks"
+      },
+      {
+        "season": "SS27",
+        "dimension": "decoration",
+        "trend": "Low-slung belts",
+        "prada": null,
+        "chanel": "chanel-ss27-belts",
+        "miu_miu": null,
+        "status": "chanel_only",
+        "why": "Also at Chanel FW26"
+      },
+      {
+        "season": "SS27",
+        "dimension": "pattern",
+        "trend": "Animal print",
+        "prada": null,
+        "chanel": "chanel-ss27-zebra",
+        "miu_miu": null,
+        "status": "chanel_only",
+        "why": "Trendalytics reports animal stripes +49%"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Orange",
+        "prada": null,
+        "chanel": "orange-ss27",
+        "miu_miu": null,
+        "status": "chanel_only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Tweed",
+        "prada": null,
+        "chanel": "chanel-ss27-tweed",
+        "miu_miu": null,
+        "status": "chanel_only"
+      },
+      {
+        "season": "FW26",
+        "dimension": "decoration",
+        "trend": "Embroidery",
+        "prada": "prada-fw26-embroidery",
+        "chanel": "chanel-fw26-embroidery",
+        "miu_miu": "miumiu-fw26-decor",
+        "status": "all_three"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Sheer layers and tulle",
+        "prada": "prada-fw26-sheer",
+        "chanel": "chanel-fw26-sheer",
+        "miu_miu": "miumiu-fw26-decor",
+        "status": "all_three"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Knitwear and cashmere",
+        "prada": "prada-fw26-knit",
+        "chanel": "chanel-fw26-knit",
+        "miu_miu": "miumiu-fw26-fabrics",
+        "status": "all_three"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Sequin and metallic shine",
+        "prada": "prada-fw26-sequin",
+        "chanel": "chanel-fw26-metallic",
+        "miu_miu": null,
+        "status": "prada_chanel"
+      },
+      {
+        "season": "FW26",
+        "dimension": "shoes",
+        "trend": "Knee-high boots",
+        "prada": "prada-fw26-shoes",
+        "chanel": null,
+        "miu_miu": "miumiu-fw26-shoes",
+        "status": "prada_miumiu"
+      },
+      {
+        "season": "FW26",
+        "dimension": "shoes",
+        "trend": "Chunky and rounded soles",
+        "prada": "prada-fw26-shoes",
+        "chanel": null,
+        "miu_miu": "miumiu-fw26-shoes",
+        "status": "prada_miumiu",
+        "why": "Prada chunky loafers; Miu Miu bubble soles revived from its early-2000s archive"
+      },
+      {
+        "season": "FW26",
+        "dimension": "jacket",
+        "trend": "Shearling and fur-lined outerwear",
+        "prada": "prada-fw26-jacket",
+        "chanel": null,
+        "miu_miu": "miumiu-fw26-jacket",
+        "status": "prada_miumiu"
+      },
+      {
+        "season": "FW26",
+        "dimension": "bottoms",
+        "trend": "Short bottoms (bermudas, abbreviated skirts)",
+        "prada": "prada-fw26-bottoms",
+        "chanel": null,
+        "miu_miu": "miumiu-fw26-bottoms",
+        "status": "prada_miumiu"
+      },
+      {
+        "season": "FW26",
+        "dimension": "color",
+        "trend": "Acid yellow and lime",
+        "prada": "prada-fw26-yellow",
+        "chanel": "buttercream-fw26",
+        "miu_miu": "miumiu-fw26-color",
+        "status": "partial",
+        "why": "Same direction, different shades: Prada acid yellow, Chanel buttercream, Miu Miu lime green"
+      },
+      {
+        "season": "FW26",
+        "dimension": "jacket",
+        "trend": "Cropped and blouson jackets",
+        "prada": null,
+        "chanel": "chanel-fw26-jacket",
+        "miu_miu": "miumiu-fw26-jacket",
+        "status": "chanel_miumiu"
+      },
+      {
+        "season": "FW26",
+        "dimension": "color",
+        "trend": "Bold bright color",
+        "prada": null,
+        "chanel": "chanel-fw26-color",
+        "miu_miu": "miumiu-fw26-color",
+        "status": "chanel_miumiu"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Lace",
+        "prada": null,
+        "chanel": "chanel-fw26-lace",
+        "miu_miu": null,
+        "status": "chanel_only"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Tweed and boucle",
+        "prada": null,
+        "chanel": "chanel-fw26-tweed",
+        "miu_miu": null,
+        "status": "chanel_only"
+      },
+      {
+        "season": "FW26",
+        "dimension": "decoration",
+        "trend": "Creased and crumpled fabrics",
+        "prada": "creased-ease-fw26",
+        "chanel": null,
+        "miu_miu": "creased-ease-fw26",
+        "status": "prada_miumiu",
+        "why": "Also Dior and Diesel; Chanel's version is the stomped-on 2.55 bag (worn-look-spread)"
+      }
+    ]
+  },
+  "assumptions": [
+    "'More weight' for Prada read as 2x when Chanel confirms; Miu Miu agreement adds 0.5.",
+    "'Equal weight' means 1.0 for every demo brand on all other dimensions.",
+    "Design dimensions (jacket, bottoms, shoes, pattern, decoration) added 2026-10-24 at Blair's request."
+  ]
+}
