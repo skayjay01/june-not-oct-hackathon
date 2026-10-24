@@ -1,7 +1,7 @@
 {
-  "version": "0.2",
+  "version": "0.3",
   "owner": "Blair (Workstream C)",
-  "note": "Attribute vocabularies for Trend library items. Matches the TrendItem fields: silhouette, material, pattern, plus details. Use 'id' in data; 'label' in the UI. 'shoe_shapes' added 2026-10-24 for footwear design trends. 'bag_shapes' added 2026-10-24.",
+  "note": "Attribute vocabularies for Trend library items. Matches the TrendItem fields: silhouette, material, pattern, plus details. Use 'id' in data; 'label' in the UI. 'shoe_shapes' added 2026-10-24 for footwear design trends. 'bag_shapes' added 2026-10-24. 'collar_shapes' added 2026-10-24.",
   "silhouettes": [
     {
       "id": "oversized",
@@ -114,6 +114,22 @@
     {
       "id": "collarless",
       "label": "Collarless jacket"
+    },
+    {
+      "id": "cardigan-jacket",
+      "label": "Cardigan-jacket"
+    },
+    {
+      "id": "double-breasted",
+      "label": "Double-breasted"
+    },
+    {
+      "id": "bomber",
+      "label": "Bomber"
+    },
+    {
+      "id": "cropped-trench",
+      "label": "Cropped trench"
     }
   ],
   "materials": [
@@ -440,6 +456,48 @@
     {
       "id": "top-handle",
       "label": "Top-handle bag"
+    }
+  ],
+  "collar_shapes": [
+    {
+      "id": "stand-up",
+      "label": "Stand-up collar"
+    },
+    {
+      "id": "funnel-neck",
+      "label": "Funnel neck"
+    },
+    {
+      "id": "collarless",
+      "label": "Collarless"
+    },
+    {
+      "id": "shawl",
+      "label": "Shawl collar"
+    },
+    {
+      "id": "peter-pan",
+      "label": "Peter Pan collar"
+    },
+    {
+      "id": "notch-lapel",
+      "label": "Notch lapel"
+    },
+    {
+      "id": "peak-lapel",
+      "label": "Peak lapel"
+    },
+    {
+      "id": "oversized-collar",
+      "label": "Oversized collar"
+    },
+    {
+      "id": "ruffled-collar",
+      "label": "Ruffled collar"
+    },
+    {
+      "id": "embellished-collar",
+      "label": "Embellished collar"
     }
   ]
 }

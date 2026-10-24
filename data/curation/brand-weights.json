@@ -1,5 +1,5 @@
 {
-  "version": "0.3",
+  "version": "0.3.1",
   "owner": "Blair (Workstream C)",
   "note": "How much each reference brand's runway and Lyst signals count when the matcher ranks trends. Set by Blair 2026-10-24. Multipliers apply to a signal's score; 1.0 is neutral. Signal ids point to editorial-signals.csv.",
   "brands": [
@@ -806,5 +806,37 @@
     "'Equal weight' means 1.0 for every demo brand on all other dimensions.",
     "Saint Laurent added 2026-10-24 for jacket, leather jacket and trench shape; bags led by Chanel and Miu Miu added the same day.",
     "Rows from 'blair_observation' signals reflect Blair's own expert read and have no published source yet."
-  ]
+  ],
+  "follower_brands": {
+    "note": "Brands that copy house designs at a lower price. A house trend showing up here means it has reached mid-market or mass (see trickle-down.csv). They are not weighted up; their adoption is a timing signal.",
+    "brands": [
+      {
+        "brand": "COS",
+        "tier": "mid-market",
+        "copies": [
+          "jacket shape",
+          "cardigan design",
+          "collar shape"
+        ],
+        "source": "Blair (cos-copies-houses-blair)"
+      },
+      {
+        "brand": "Massimo Dutti",
+        "tier": "mid-market",
+        "copies": [
+          "tailoring",
+          "quiet-luxury basics"
+        ],
+        "source": "demo-set.md"
+      },
+      {
+        "brand": "Zara",
+        "tier": "mass",
+        "copies": [
+          "fast copies of runway shapes"
+        ],
+        "source": "Blair's Zara check, 24 Oct"
+      }
+    ]
+  }
 }

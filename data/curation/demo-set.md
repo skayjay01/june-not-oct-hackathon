@@ -4,7 +4,7 @@ Owner: Blair (Workstream C). Decided 2026-10-24. Yishan and Yizhi build to this.
 
 Evidence for every question lives in [`editorial-signals.csv`](editorial-signals.csv), each row with its source link. Colors use codes from [`colors.json`](colors.json); style tags come from [`style-tags.json`](style-tags.json).
 
-## Demo brands (6)
+## Demo brands (7)
 
 Two groups, because the big houses can't be crawled the same way.
 
@@ -16,15 +16,16 @@ Two groups, because the big houses can't be crawled the same way.
 | Damson Madder | damsonmadder.com | romantic, dopamine, maximalist | contemporary (dress ~£85) | Price-sensitive / mass market |
 | Paloma Wool | palomawool.com | avant-garde, sustainable, minimalist | contemporary (~130) | Fashion house / editorial |
 
-**Reference** — large houses with no public product list we can use (*not checked; assume no*). Profile text is pasted in by hand (allowed by PRD US-002 / §7.2); trend evidence comes from `editorial-signals.csv` (runway and Lyst rows).
+**Reference** — large brands with no public product list we can use (*not checked; assume no*). Profile text is pasted in by hand (allowed by PRD US-002 / §7.2); trend evidence comes from `editorial-signals.csv` (runway and Lyst rows).
 
 | Brand | Style tags | Price tier | Weight preset | Key signal |
 |---|---|---|---|---|
 | Miu Miu | ugly-chic, preppy, ballet-core | luxury | Fashion house / editorial | Lyst #2 in Q2 2026, searches +30% |
 | Prada | minimalist, avant-garde, tailored | luxury | Fashion house / editorial | Green on SS27 runway |
 | Massimo Dutti | quiet-luxury, tailored, minimalist | mid-premium | Price-sensitive / mass market | Lyst biggest climber Q2 2026 (+8 places) |
+| COS | minimalist, quiet-luxury, tailored | mid-premium | Price-sensitive / mass market | Copies house jacket, cardigan and collar shapes (Blair); Lyst #10 in Q1 2026, dropped out in Q2 |
 
-Note: the PRD targets $10M–$100M brands. Miu Miu, Prada and Massimo Dutti are far larger; they are here as recognizable references for the pitch, not as target customers.
+Note: the PRD targets $10M–$100M brands. Miu Miu, Prada, Massimo Dutti and COS are far larger; they are here as recognizable references for the pitch, not as target customers.
 
 ## Demo questions (5)
 
