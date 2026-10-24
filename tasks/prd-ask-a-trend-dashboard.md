@@ -1,240 +1,245 @@
-# PRD: Ask-a-Trend — AI-Generated Fashion Trend Dashboards
+# PRD: Ask-a-Trend — Style-Matched Fashion Trend Digest + AI Dashboards
 
-> **Status:** Draft v0.3 (2026-10-24). Built from the team's first three discussion transcripts (v0.2 added the question-to-dashboard flow, adjustable weights, latency, model and cost strategy, and data coverage; v0.3 adds brand-style onboarding, the pushed inspiration feed, and new data sources). Will be revised once the full voice-to-text transcripts of all team conversations are added. Items marked **[ASSUMPTION]** are placeholders the team has not yet decided.
+> **Status:** v1.0 (final for hackathon build), 2026-10-24. Built from three team discussion transcripts plus a first research pass (`tasks/research-2026-10-24.md`). Team decisions are recorded in §2. Remaining **[ASSUMPTION]** items are defaults the build can proceed on.
 
 ## 1. Introduction / Overview
 
-Fashion brands that follow trends — fast fashion and mass-market labels such as Zara, Cider, Fashion Nova and SHEIN — live or die by how quickly they spot what customers want next. SHEIN's Guangzhou-based flexible supply chain can turn a small test order around in roughly 10 days, and the very front of that pipeline is trend research.
+Trend-following fashion brands — fast fashion and mass-market labels such as Zara, Cider, Fashion Nova and SHEIN — live or die by how quickly they spot what customers want next. SHEIN's Guangzhou flexible supply chain turns a small test order around in about 10 days, and the front of that pipeline is trend research.
 
-Today brands do this research in one of two ways:
+Brands research trends in-house (at a $10M–$100M brand, often the founder plus one or two people) or buy reports from firms like WGSN and Heuritech, which cost roughly $10k–$35k a year. Big platforms have started adding "ask a question" chat (EDITED's AskEDITED, Future Snoops' MUSE), but each answers only from its own data, sells to enterprises, and none learns a small brand's own style or sends it tailored ideas.
 
-- **In-house.** Product or development staff track trends themselves. The smaller the brand, the more centralized this is: a brand doing tens of millions of dollars in revenue often has the founder plus one or two people doing it. Larger brands split it across specialized roles.
-- **Outsourced.** Brands buy reports or consulting from third-party trend-research firms.
+**Ask-a-Trend fills that gap with two surfaces:**
 
-**Ask-a-Trend** lets someone on a brand's team type a plain-language question (for example, *"What colors are gaining traction in women's summer dresses under $50?"*). An AI model interprets the question, pulls the relevant trend data, and **generates a dashboard built for that specific question** — charts, rankings and example images — instead of showing a fixed, one-size-fits-all dashboard.
+1. **Style-matched digest (lead feature).** A brand gives us its website and Instagram. We read the *text* there (About Us, product descriptions, image alt text, captions), have the AI write a brand-style profile, and then push a regular digest of on-trend inspiration that fits that style — real finished-product examples, colors, and (where licensed) fabrics and patterns — to email or Slack.
+2. **Ask-a-question dashboard (supporting feature).** A user types a plain-language question (*"Which colors are gaining traction in summer dresses under $50?"*). The AI interprets it, matches it against the trend database using that brand's profile and weights, and generates a dashboard for that question.
 
-**How a question becomes a dashboard (end-to-end flow):**
+**End-to-end flow (shared by both surfaces):** Ask or schedule → AI interprets the style/segment and what the user cares about → match against the trend database, scored by dimension weights → assemble the dashboard or digest spec → design step styles it.
 
-1. **Ask** — the user types a question.
-2. **Interpret** — the AI works out *which style/segment* the question is about (e.g., niche streetwear vs. high fashion) and *what the user cares about* (e.g., price range, color, silhouette, speed of growth).
-3. **Match** — the backend matches that interpretation against the trend database and scores results using the dimension weights for that user (see US-008).
-4. **Assemble** — the system builds the dashboard spec from the matched data.
-5. **Design** — a design step (the AI applying a design skill / style guide) lays out and styles the dashboard so it looks polished rather than generic.
+**Positioning:** complements a brand's in-house or outsourced research, and replaces the manual first pass (scanning social media and competitor new arrivals). Priced for founder-led brands that can't afford enterprise tools **[ASSUMPTION: test $99 / $199 / $499 per month]**.
 
-**Why a question-driven dashboard instead of a fixed one:** A static dashboard feels stale, and different brands care about very different segments (a small brand may only care about one style niche). Generating the view from the user's question fits each brand's niche and feels AI-native, which also makes for a stronger demo.
+### Ideas considered and set aside
+- **World Chaos Index** — no clear paying market and people become desensitized to war news. Better as an open-source / not-for-profit project with an expert advisory board.
+- **Podcast production automation** — the team already has its own editing workflow.
 
-**Second surface — a personalized trend feed pushed to the brand.** Beyond answering questions, the product learns each client brand's style and proactively sends it on-trend inspiration:
+## 2. Team Decisions (2026-10-24)
 
-1. **Onboard** — the client gives us its own website, Instagram and any other data sources it already uses.
-2. **Understand the brand** — we crawl the *text* on those pages (About Us, product descriptions, image alt text, Instagram captions) and have the AI write a brand-style profile. No image recognition: training a style-recognition image model is not hard, but the processing cost is too high, and text is usually enough.
-3. **Personalize** — the brand profile filters and ranks trends, so the client gets a company-specific view of what's trending *for their style*.
-4. **Push** — the system sends a regular digest by email, Slack or WhatsApp, without the client having to log in.
+| # | Decision | Detail |
+|---|---|---|
+| D1 | **Lead feature: style-matched digest** | Gets most build time and leads the pitch. The question-to-dashboard flow is a supporting feature. |
+| D2 | **AI runs on the founder's existing subscriptions** | Multiple accounts with automatic failover when one runs out, reusing the founder's existing internal "IT assistant" setup. Fast, cheap models by default. Risk noted in §8; paid developer API keys are the fallback. |
+| D3 | **Bring-your-own-licence for paid sources** | We build and maintain integrations for licensed sources (WGSN, Coloro, Pantone, Première Vision, F-Trend, Heuritech, etc.). The client connects its own licence or key; we never resell their data. |
+| D4 | **Gather as many sources as possible** | A crawler collects every useful publicly available source, following industry best practice (§7.3). Where a source is licence-only, we use its public pages or a third-party route. |
+| D5 | **Text, not images, for style** | Brand style and trend attributes come from text. No image-recognition model — processing cost is too high, and text is usually enough. |
+| D6 | **Show real examples, don't generate designs** | Digests show representative real finished products the AI picks; no AI-generated designs. |
+| D7 | **Fixed color list** | Color trends are named from a predefined list passed to the AI, so names stay consistent. |
+| D8 | **Channels: email + Slack live; WhatsApp demo** **[ASSUMPTION]** | WhatsApp runs on Meta's free test number (up to 5 recipients) for the demo; production WhatsApp later. |
 
-**Positioning:** The product can *complement* a brand's existing in-house or outsourced research, or *replace* parts of that workflow (e.g., the manual first pass of scanning social media and competitor new arrivals).
+## 3. Goals
 
-### Background: ideas considered and set aside
+- A new brand can go from entering its website to receiving its first style-matched digest in **under 5 minutes**.
+- Every digest item and every chart traces back to a real record the user can open (no invented data).
+- Brand-style profiles are accurate enough that the founder and at least 2 other operators rate their own profile "accurate" without major edits.
+- Rehearsed demo questions load in **under 2 seconds**; live questions produce a full dashboard in **under 30 seconds** **[ASSUMPTION]**.
+- The pitch answers "who pays?" with the founder as the first validating customer and at least one operator who says they would pay.
 
-- **World Chaos Index** (a COVID-dashboard-style tracker of global instability and proximity to world war). Set aside as the hackathon product because there is no clear paying market and people become desensitized to war news. If pursued, it fits better as an open-source / not-for-profit project with an expert advisory board.
-- **Podcast production automation.** Dropped from scope; the team already has its own internal editing workflow for remotely recorded episodes.
+## 4. User Stories
 
-## 2. Goals
+**Primary user:** the founder or 1–3-person product/trend team at a small-to-mid trend-following brand (~$10M–$100M revenue).
 
-- A user can go from typing a question to seeing a relevant, readable dashboard in **under 30 seconds** **[ASSUMPTION — target]**.
-- Every dashboard is **specific to the question asked** — different questions produce visibly different layouts and charts, not the same template with new numbers.
-- Every chart traces back to real data the user can inspect (no invented numbers).
-- The demo works reliably end-to-end on at least **5 rehearsed questions** for the hackathon presentation.
-- The pitch can credibly answer "who pays?" — B2B / enterprise fashion brands, with the founder (an actual user of this kind of research) as the first validating customer.
+Priority: **P0** = must ship for the demo, **P1** = ship if time allows.
 
-## 3. User Stories
-
-**Primary user [ASSUMPTION]:** the founder or a 1–3-person product/trend team at a small-to-mid-size trend-following fashion brand (roughly $10M–$100M revenue).
-
-### US-001: Ask a trend question
-**Description:** As a brand founder, I want to type a question in plain English so that I don't have to learn a dashboard tool or filter menus.
+### US-001 (P0): Onboard a brand
+**Description:** As a founder, I want to enter my website and Instagram so the product learns my brand without me describing it.
 
 **Acceptance Criteria:**
-- [ ] The home screen shows a single prominent text box with a submit button and 3–5 clickable example questions.
-- [ ] Pressing Enter or clicking submit sends the question; empty input is rejected with an inline message.
-- [ ] A loading state is shown within 300 ms of submitting.
+- [ ] Onboarding form accepts brand name, website URL, Instagram handle, optional extra URLs (e.g., competitors the brand watches), and digest channel + frequency.
+- [ ] Submitting starts a background crawl and shows progress; the page does not hang.
 - [ ] Typecheck/lint passes.
 - [ ] Verify in browser using dev-browser skill.
 
-### US-002: AI turns the question into a dashboard plan
-**Description:** As a developer, I need the AI model to convert a question into a structured dashboard specification so the front end can render it safely and consistently.
+### US-002 (P0): Build the brand-style profile from text
+**Description:** As a founder, I want an AI-written profile of my brand's style so recommendations fit my look.
 
 **Acceptance Criteria:**
-- [ ] The backend sends the question to the AI API along with the list of available data sources and chart types.
-- [ ] The AI returns a JSON spec (title, list of widgets, each with a chart type, data query, and one-line explanation) that validates against a defined schema.
-- [ ] If the AI returns invalid JSON or an unknown chart type, the backend retries once, then returns a friendly error.
-- [ ] The AI never returns raw HTML or executable code to the browser.
-- [ ] Typecheck/lint passes.
-
-### US-003: Render the generated dashboard
-**Description:** As a user, I want to see my answer as charts, rankings and example images so I can grasp the trend at a glance.
-
-**Acceptance Criteria:**
-- [ ] The front end renders each widget in the spec using a fixed component library (see FR-6).
-- [ ] The dashboard has a title restating the question and a 2–3 sentence written summary at the top.
-- [ ] Each widget shows a short caption saying what it shows and where the data came from.
-- [ ] Layout works on a laptop screen and a phone-width screen.
+- [ ] The crawler collects text only: About Us, product titles/descriptions/tags, image alt text, Instagram bio and captions. No images are analyzed.
+- [ ] The AI produces: 3–5 style tags, typical price range, core categories, typical colors (from the fixed color list), and a one-paragraph summary.
+- [ ] The user can edit any field before saving; edits are kept on re-crawl.
 - [ ] Typecheck/lint passes.
 - [ ] Verify in browser using dev-browser skill.
 
-### US-004: Refine with a follow-up question
-**Description:** As a user, I want to ask a follow-up ("now only show denim", "compare to last year") so I can drill in without starting over.
+### US-003 (P0): Collect trend data
+**Description:** As a developer, I need a pre-collected trend database so digests and dashboards are fast and don't depend on live crawling.
 
 **Acceptance Criteria:**
-- [ ] A follow-up box appears under the current dashboard.
-- [ ] Follow-ups are sent with the previous question and spec as context, and the dashboard updates in place.
-- [ ] The user can go back to the previous version of the dashboard.
+- [ ] Source connectors load data into the database on a schedule, each tagged with source, date, category, attributes (color, silhouette, material, pattern, style tags), price, image URL and link.
+- [ ] At least the P0 sources in §7.2 are connected before the demo.
+- [ ] The crawler follows the rules in §7.3; every source has a recorded entry of what was collected and under what terms.
+- [ ] Re-running a connector does not create duplicates.
+
+### US-004 (P0): Receive a style-matched digest
+**Description:** As a founder, I want on-trend inspiration that fits my style sent to my email or Slack so I collect design ideas without going looking.
+
+**Acceptance Criteria:**
+- [ ] Each digest names 2–4 trending elements relevant to the brand profile (e.g., "butter yellow", "barrel-leg denim"), each with a one-sentence reason and a "fits your brand because…" line.
+- [ ] Each element shows 3–5 real finished-product examples from the database, with source links.
+- [ ] Colors use names from the fixed color list.
+- [ ] Delivered by email and by Slack; a "send test digest now" button exists for the demo.
+- [ ] Each item has 👍 / 👎 feedback that is stored.
+- [ ] Typecheck/lint passes.
+
+### US-005 (P0): Ask a question, get a dashboard
+**Description:** As a founder, I want to type a trend question and get a dashboard built for it.
+
+**Acceptance Criteria:**
+- [ ] Home screen has a prominent question box with 3–5 example questions.
+- [ ] The AI returns a JSON dashboard spec (title, summary, widgets with chart type + predefined query + caption) that validates against a schema; invalid output retries once, then shows a friendly error.
+- [ ] Widgets render from the fixed component set (FR-12) and show source and date range.
+- [ ] Results are filtered and ranked using the user's brand profile and weights.
 - [ ] Typecheck/lint passes.
 - [ ] Verify in browser using dev-browser skill.
 
-### US-005: See the evidence behind a trend
-**Description:** As a user, I want to click on a chart element and see the underlying examples (products, posts, images) so I can trust the insight before acting on it.
+### US-006 (P0): Fast demo path
+**Description:** As a presenter, I want rehearsed questions and demo brands to load instantly.
 
 **Acceptance Criteria:**
-- [ ] Clicking a bar, point or ranking row opens a side panel listing the underlying items with image, source, date and link.
-- [ ] Items in the panel are real records from the dataset, not AI-generated.
+- [ ] Dashboards for rehearsed questions and profiles/digests for demo brands are generated ahead of time and stored.
+- [ ] Rehearsed questions load in under 2 seconds.
+- [ ] Every live request logs time spent in: AI interpretation, data matching, assembly, design.
+
+### US-007 (P1): Adjust weights and presets
+**Description:** As a founder, I want to tune how much each dimension counts (price range, social buzz, growth speed, competitor adoption) so results match what my kind of brand cares about.
+
+**Acceptance Criteria:**
+- [ ] Defaults follow industry best practice, documented with a one-line reason each.
+- [ ] Presets: "Price-sensitive / mass market", "Niche streetwear", "Fashion house / editorial".
+- [ ] Sliders always total 100%; changing them re-ranks without calling the AI again.
 - [ ] Typecheck/lint passes.
 - [ ] Verify in browser using dev-browser skill.
 
-### US-006: Collect and store trend data
-**Description:** As a developer, I need a pre-collected dataset of fashion trend signals stored in the database so dashboards load fast and the demo doesn't depend on live scraping.
+### US-008 (P1): Connect a licensed source (bring your own licence)
+**Description:** As a brand with an existing WGSN/Coloro/Pantone/other subscription, I want to plug in my licence so my digest and dashboards include that data.
 
 **Acceptance Criteria:**
-- [ ] A script loads data from the chosen sources (see Open Questions) into Supabase tables.
-- [ ] Each record has at minimum: source, date, category, attributes (color, silhouette, material, style tags), price if available, image URL, and link.
-- [ ] The dataset covers at least the categories used in the rehearsed demo questions.
-- [ ] Re-running the script does not create duplicate records.
-
-### US-007: Save and share a dashboard
-**Description:** As a founder, I want to save a dashboard and share a link with my team so we can discuss it.
-
-**Acceptance Criteria:**
-- [ ] A "Save" button stores the question and generated spec and returns a shareable link.
-- [ ] Opening the link re-renders the same dashboard without calling the AI again.
+- [ ] A Sources settings page lists each supported licensed source with a "Connect" action (API key, or upload of licensed exports where no API exists).
+- [ ] Licensed data is stored per brand and only ever shown to that brand.
+- [ ] Disconnecting removes that brand's licensed data.
 - [ ] Typecheck/lint passes.
 - [ ] Verify in browser using dev-browser skill.
 
-### US-008: Adjust how trends are weighted
-**Description:** As a user, I want to choose or tune how much each dimension (e.g., price range, social buzz, growth speed, competitor adoption) counts, so the results match what my kind of brand cares about.
+### US-009 (P1): Follow-up questions and evidence panel
+**Description:** As a founder, I want to refine a dashboard with a follow-up and click any chart element to see the real items behind it.
 
 **Acceptance Criteria:**
-- [ ] Default weights follow industry best practice and are documented in the codebase, with a one-line reason for each.
-- [ ] A Settings page offers at least 3 presets **[ASSUMPTION — examples]**: "Price-sensitive / mass market", "Niche streetwear", "Fashion house / editorial (Vogue-style)".
-- [ ] The user can switch presets or move individual weight sliders; weights always add up to 100%.
-- [ ] Changing weights re-ranks the current dashboard without calling the AI again.
-- [ ] The dashboard shows which preset is active.
+- [ ] Follow-up box under the dashboard updates it in place, with a back button.
+- [ ] Clicking a bar/point/row opens a panel of the underlying real records (image, source, date, link).
 - [ ] Typecheck/lint passes.
 - [ ] Verify in browser using dev-browser skill.
 
-### US-009: Fast, reliable demo questions
-**Description:** As a presenter, I want the rehearsed demo questions to load instantly so the live demo never stalls on AI or data latency.
+### US-010 (P1): WhatsApp digest (demo) and saved/shared dashboards
+**Description:** As a founder, I want the digest on WhatsApp and to share a saved dashboard with my team.
 
 **Acceptance Criteria:**
-- [ ] Dashboards for the rehearsed demo questions are generated ahead of time and stored.
-- [ ] Asking a rehearsed question serves the stored dashboard in under 2 seconds.
-- [ ] Non-rehearsed questions still go through the live AI path.
-- [ ] A latency log records, for every live request, the time spent in AI interpretation, data matching, dashboard assembly and design.
+- [ ] WhatsApp delivery works to the demo test number's approved recipients.
+- [ ] "Save" stores a dashboard and returns a shareable link that re-renders without calling the AI.
 
-### US-010: Onboard a brand and build its style profile
-**Description:** As a brand founder, I want to give the product my website and Instagram so it understands my brand's style without me describing it by hand.
+## 5. Functional Requirements
 
-**Acceptance Criteria:**
-- [ ] An onboarding form accepts a brand name, website URL, Instagram handle, and optional extra source URLs.
-- [ ] The system crawls text only: About Us, product titles and descriptions, image alt text, and Instagram bio/captions.
-- [ ] The AI produces a brand-style profile: 3–5 style tags, typical price range, core categories, typical colors, and a one-paragraph summary.
-- [ ] The user can review and edit the profile before it is saved.
-- [ ] No images are downloaded or analyzed for style detection.
-- [ ] Typecheck/lint passes.
-- [ ] Verify in browser using dev-browser skill.
+**Brand profile & digest**
+- FR-1: Brand style must be inferred from crawled text only (About Us, product text, alt text, Instagram bio/captions), never from image recognition.
+- FR-2: The brand profile must be stored, editable, and used to filter and rank both digests and dashboards for that brand.
+- FR-3: Digests must contain only real records from the database, chosen by the AI as representative of a trend; no generated designs or images.
+- FR-4: Color trends must be named from a fixed color list passed to the AI; the AI may not invent color names.
+- FR-5: Digests must be deliverable by email and Slack, on a daily or weekly schedule, with a manual "send now".
+- FR-6: Digest feedback (👍/👎 per item) must be stored and used to adjust future ranking for that brand **[P1 for the adjustment; storage is P0]**.
 
-### US-011: Receive a pushed inspiration digest
-**Description:** As a brand founder, I want on-trend inspiration matched to my style sent to my email or Slack so I collect design ideas without going looking for them.
+**Data**
+- FR-7: Each source must be a separate connector that can be switched on or off without code changes elsewhere.
+- FR-8: Licensed sources must use the client's own licence (bring your own licence) and keep that data visible only to that client.
+- FR-9: The crawler must follow §7.3.
+- FR-10: No live crawling during a user request; all data is pre-collected.
 
-**Acceptance Criteria:**
-- [ ] The user picks a channel (email or Slack for the hackathon; WhatsApp later **[ASSUMPTION]**) and a frequency (daily or weekly).
-- [ ] Each digest names 2–4 trending elements relevant to the brand profile (e.g., "butter yellow", "barrel-leg denim"), each with a one-sentence explanation.
-- [ ] Each element includes 3–5 representative *finished-product images* from the dataset, with source links. No AI-generated images.
-- [ ] Color trends are named from a fixed color list, so color names stay consistent across digests (FR-20).
-- [ ] A "send test digest now" button exists for the demo.
-- [ ] Each digest has a one-click "useful / not useful" rating, used to test whether clients actually want this feature.
+**Question-to-dashboard**
+- FR-11: Accept a free-text question up to 500 characters; the AI returns a schema-validated JSON spec; the AI never returns code or HTML to the browser.
+- FR-12: Widgets render only from a fixed set: trend line, ranked bar chart, image grid, big-number card, side-by-side comparison, color swatch palette.
+- FR-13: Widget data comes from predefined, parameterized queries chosen by the AI, not free-form database queries.
+- FR-14: Every widget shows its data source and date range; out-of-scope or no-data questions get a plain message and a suggested alternative.
+- FR-15: Results are ranked using per-dimension weights with defaults, presets, and user-adjustable sliders.
 
-## 4. Functional Requirements
+**AI & performance**
+- FR-16: All AI calls go through one internal provider layer supporting Gemini, OpenAI and Claude, so the model can be changed by configuration.
+- FR-17: The provider layer must hold several accounts and fail over automatically when one runs out of quota or errors, without the user seeing an error.
+- FR-18: Routine steps use a fast, low-cost model; expensive models are not used by default.
+- FR-19: Repeated identical questions are served from cache; rehearsed demo content is pre-generated.
+- FR-20: Per-step latency is logged for every live request.
+- FR-21: Account credentials and keys stay on the server and are never sent to the browser or committed to the repo.
 
-- FR-1: The system must accept a free-text question of up to 500 characters.
-- FR-2: The system must send the question to an AI model API together with a description of available data fields and allowed chart types.
-- FR-3: The AI must respond with a dashboard specification in JSON that matches a defined schema; the backend must validate it before anything is shown.
-- FR-4: The backend must run each widget's data query against the stored dataset and attach the results to the spec.
-- FR-5: The system must generate a short written summary of the findings, grounded only in the queried data.
-- FR-6: The front end must render widgets only from a fixed set of chart types: trend line over time, ranked bar chart, image grid ("top examples"), single big-number card, side-by-side comparison, and color swatch palette.
-- FR-7: Every widget must display its data source and date range.
-- FR-8: If a question is out of scope (not about fashion/apparel trends) or no data matches, the system must say so plainly and suggest a related question it can answer.
-- FR-9: The system must support at least one follow-up question that modifies the current dashboard.
-- FR-10: The system must let a user save a dashboard and open it later via a link.
-- FR-11: The AI API key must stay on the server and never be sent to the browser.
-- FR-12: Results must be ranked using per-dimension weights, with an industry-best-practice default, selectable presets, and user-adjustable sliders (US-008).
-- FR-13: The system must support more than one AI provider (Gemini, OpenAI, Claude) behind a single internal interface, so the provider can be swapped by configuration.
-- FR-14: When the active AI account or key runs out of quota or errors, the system must automatically fail over to the next configured one without the user seeing an error.
-- FR-15: Routine steps (interpreting the question, building the spec) must use a fast, low-cost model; the most expensive models are not used by default.
-- FR-16: The system must log per-step latency for every live request (US-009).
-- FR-17: Demo questions must be served from pre-generated dashboards (US-009).
-- FR-18: Brand style must be inferred from crawled text only (About Us, product descriptions, image alt text, Instagram captions), never from image recognition (US-010).
-- FR-19: The brand-style profile must be stored and used to filter and rank both dashboards and pushed digests for that brand.
-- FR-20: Color trends must be expressed using a fixed, predefined color list passed to the AI in the prompt; the AI picks from the list rather than inventing color names.
-- FR-21: Pushed digests must show real finished-product examples chosen by the AI as representative of a trend; the system does not generate new designs or images.
-- FR-22: The push system must support email and Slack at launch, built so WhatsApp can be added later.
+## 6. Non-Goals (Out of Scope)
 
-## 5. Non-Goals (Out of Scope)
-
-- No podcast or audio features.
-- No World Chaos Index.
-- No live, real-time scraping during a user's request — data is pre-collected.
-- No trend *forecasting* model (predicting future demand); v1 shows what the data says now and recently.
+- No podcast features and no World Chaos Index.
+- No image recognition or computer-vision style model.
+- No AI-generated product images or designs.
+- No trend *forecasting* model predicting future demand; v1 shows current and recent signals.
 - No supplier sourcing, ordering or supply-chain integration.
-- No user accounts, billing or team management for the hackathon build **[ASSUMPTION]**.
-- No AI-generated product images or designs, and no fully generated design packs. Digests show real examples.
-- No image recognition or computer-vision style model. Style comes from text.
-- No fabric or pattern trend feeds in v1 unless a free or open third-party source is found (see Open Question 10). Finished-product images and colors come first.
-
-## 6. Design Considerations
-
-- The question box is the hero of the page — think search engine, not admin panel.
-- Dashboards should "assemble" visibly (widgets appearing one by one) to reinforce the AI-native feel in the demo.
-- Fashion is visual: every dashboard should include at least one image-based widget where data allows.
-- Keep styling clean and editorial (fashion-magazine feel) rather than enterprise-grey.
+- No reselling or redistributing licensed data across clients.
+- No getting past logins, paywalls or anti-bot protections (§7.3).
+- No billing or team management for the hackathon build **[ASSUMPTION]**.
 
 ## 7. Technical Considerations
 
+### 7.1 Stack
 - **Hosting:** Vercel project `june-not-oct-hackathon`, auto-deploys from this repo.
 - **Database:** the team's Supabase project (see `CLAUDE.md`).
-- **AI model:** the founder already has Gemini, OpenAI and Claude API access, and the demo needs few tokens, so model choice is not the bottleneck — speed is. Default to a fast model such as Gemini 3.8 Flash for interpreting questions and building specs; reserve stronger models for cases that need them. Use structured (JSON) output for the dashboard spec.
-- **AI cost and accounts:** AI calls run on the founder's existing AI accounts (a few accounts, roughly a few hundred dollars a month of capacity, which is now ample). The backend holds several accounts and switches automatically when one runs out (FR-14). This follows a setup the founder already runs for an internal company "IT assistant" bot. See Open Question 7 on account terms.
-- **Latency is the main technical risk.** Total time = AI interpretation + data matching + dashboard assembly + design step. Measure each step (FR-16), pre-generate demo dashboards (FR-17), and consider streaming widgets onto the page as each one is ready.
-- **Safety:** the AI produces a *spec*, never code. The front end only renders known components; this prevents broken or unsafe output and keeps the look consistent.
-- **Data queries:** the AI should choose from predefined, parameterized queries (e.g., "top attributes by mention growth in category X over period Y") rather than writing free-form SQL. This keeps queries safe and fast.
-- **Performance:** cache AI responses for repeated identical questions so the live demo is fast and cheap.
-- **Moat note (from discussion):** pure SaaS is hard to defend long-term. Defensibility more likely comes from a proprietary or well-curated dataset and from workflow lock-in (saved dashboards, team sharing), not from the dashboard UI itself.
+- **AI:** provider layer per FR-16/17 on the founder's subscriptions (D2). Day 1: time **Gemini 3.8 Flash** and **Claude Haiku 5.5** on real prompts at low thinking settings and pick the default. Research found Gemini 3.8 Flash at full thinking takes ~25 seconds before its first output, so keep thinking low. Gemini 3.8 Flash's API price doubles on 2027-01-01 (relevant only on the paid-key fallback).
+- **Structured output:** use each provider's JSON-schema mode; keep the dashboard schema shallow; stream partial JSON so widgets appear one by one.
+- **Email:** Resend (free for 3,000 emails/month). **Slack:** incoming webhook per workspace. **WhatsApp:** Meta Cloud API test number for the demo.
 
-## 8. Success Metrics
+### 7.2 Source plan
 
-- Hackathon demo: all rehearsed questions produce a correct dashboard on stage with no errors.
-- Median time from submit to full dashboard under 30 seconds **[ASSUMPTION]**.
-- At least 3 fashion-brand operators (founder's network) say they would use it weekly, and at least 1 says they would pay **[ASSUMPTION]**.
-- In testing, 80%+ of a set of 20 realistic questions produce a dashboard a team member rates "useful."
+| Priority | Source | What it gives | Route |
+|---|---|---|---|
+| P0 | Client's own website + Instagram | Brand-style text | Crawl public pages; Instagram via official Business Discovery API where approved, otherwise text the client pastes in |
+| P0 | Public product lists of small/mid online stores (many Shopify stores expose these) | New-arrival products, tags, prices, images | Crawler |
+| P0 | Pinterest Trends | Growing fashion keywords by region | Official API (apply day 1; approval time unknown) |
+| P0 | Google Trends | Search-interest curves | Unofficial library with caching plus a pre-pulled fallback file (official API is invite-only) |
+| P0 | Publicly announced colors (WGSN × Coloro, Pantone Color of the Year and key colors) | Seed for the fixed color list | Entered by hand from press releases |
+| P1 | Met Museum and Cooper Hewitt open collections | Textile and pattern inspiration (free to reuse) | Official APIs |
+| P1 | Première Vision Paris | Fabric trend decoding | Public pages for reference; full content via client's licence |
+| P1 | F-Trend | Colors, patterns, garment categories | Bring your own licence. **Confirm which F-Trend is meant** — f-trend.com is run by an Indian company; a Chinese trend platform would be a different source. |
+| P1 | WGSN / Coloro / Pantone / Heuritech | Forecasts, full color systems | Bring your own licence (WGSN has an enterprise API) |
+| P1 | Reddit, TikTok Creative Center | Discussion and social signals | Reddit official API (commercial use needs an agreement); TikTok via third-party providers |
+| Ref | SHEIN, Zara, Cider, Fashion Nova | Competitor new arrivals | Their terms prohibit automated collection or the public product list is off: use manually as references, or via a third-party data provider |
 
-## 9. Open Questions
+### 7.3 Crawler rules (industry best practice)
+- Respect each site's robots.txt and published rate limits; crawl slowly and identify the crawler honestly.
+- Collect only pages visible without logging in; never get past logins, paywalls, CAPTCHAs or anti-bot systems.
+- Licensed or paywalled content enters only through the client's own licence (D3).
+- Store links and short excerpts plus our own extracted attributes; link out to images rather than re-hosting them **[ASSUMPTION]**.
+- Keep a per-source record of terms reviewed and what is collected; switch a connector off on any complaint.
 
-1. **Data sources — the #1 next task.** Dashboard coverage depends almost entirely on how rich the database is. If it only supports a dozen or so dashboards and a user asks something very specific or niche, there will be little to show. Finding enough sources to cover many use cases is the team's core next step. Where does the trend data come from? Candidates: Google Trends, TikTok/Instagram/Pinterest hashtags and posts, competitor new-arrival pages (SHEIN, Zara, Cider), marketplace bestseller lists. What is legally and practically collectable before the hackathon?
-2. **Target customer:** small founder-led brands (fast to sell, low budgets) or larger enterprise brands (bigger budgets, longer sales cycles)?
-3. **Complement or substitute:** do we pitch alongside existing trend consultants, or as a cheaper replacement for part of their work?
-4. **Demo questions:** which 5 questions will we rehearse? These decide which data we must collect.
-5. **Moat:** what is our long-term defensibility beyond the UI — proprietary data, the founder's industry network, or something else?
-6. **Hackathon logistics:** deadline, judging criteria and team roles (who owns data, AI, front end, pitch).
-7. **Which AI accounts power the app:** check that the accounts used are allowed to serve an app used by other people. Paid API keys are built for this. Consumer chat subscriptions (e.g., ChatGPT Plus, Claude Pro/Max) generally are not, and company-paid credits may not be allowed for a non-company hackathon project. Confirm before launch.
-8. **Weights:** what are the industry-best-practice default weights, and which presets do we ship? Fixed weights are fine for the demo, but setting them for a commercial product is hard.
-9. **Pre-built vs. fully generated dashboards:** do we keep a library of dashboard templates that the AI picks from and fills in, or does the AI compose every dashboard from widgets? A template library is faster and more reliable; full generation covers more niche questions.
-10. **Fabric, pattern and color sources:** finished-product images are easy to source, but fabric, pattern and color-code trends usually need niche third-party data. Are there free or open sources? Known lead: **Première Vision Paris** (premierevision.com), which publishes fabric trend decoding. Second lead: **F-Trend**, another source for fabric-type trends (website to be confirmed). Add both to the source list.
-11. **Client-supplied sources:** what will clients realistically share (website, Instagram, competitor lists, internal sales data)? Do we need their permission in writing to crawl their accounts, and do Instagram's terms allow crawling captions?
-12. **Which surface leads the pitch:** the ask-a-question dashboard (more "AI-native", stronger live demo) or the pushed digest (likely more useful day to day for founder-led brands)? We could build both and test which one clients use more.
+### 7.4 Moat
+Pure SaaS is hard to defend and we hold no proprietary raw data. The moat is: (1) a brand-style profile that improves with every 👍/👎; (2) trends filtered to *this brand's* look rather than a generic forecast; (3) blending many free sources with each client's licensed ones; (4) living in the founder's inbox and Slack, a habit no dashboard tool has; (5) self-serve pricing far below enterprise tools.
+
+## 8. Risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| **Subscription terms (D2).** Claude, ChatGPT and Gemini consumer terms prohibit automated or third-party use of subscriptions and sharing accounts; OpenAI also prohibits circumventing rate limits. | Accounts could be suspended, possibly mid-demo. | Pre-generate all demo content (US-006); keep a paid developer key configured as a last fallback (est. $1–$25 for the whole demo); move to paid keys before any real customers. |
+| Source access and terms | Data gaps; takedown requests | Many sources (§7.2), crawler rules (§7.3), connectors can be switched off. |
+| Thin data for niche questions | Sparse dashboards | Lead with the digest (D1); the question box suggests answerable alternatives (FR-14). |
+| Latency | Slow live demo | Low thinking, streaming, caching, pre-generation (FR-18–20). |
+| API approvals (Pinterest, Meta) arrive late | Missing P0 source | Apply on day 1; Google Trends and store product lists don't need approval. |
+
+## 9. Success Metrics
+
+- Demo: onboarding → first digest in under 5 minutes, live, with no errors; all rehearsed questions render correctly.
+- Profile accuracy: founder + 2 operators rate their profile "accurate".
+- Digest usefulness: ≥60% 👍 across demo-brand digest items **[ASSUMPTION]**.
+- Demand: at least 3 operators from the founder's network say they'd read it weekly; at least 1 says they'd pay at a tested price point.
+
+## 10. Remaining Open Questions
+
+1. **Which F-Trend** — the Indian site f-trend.com, or a Chinese trend platform?
+2. **Demo brands and questions** — which 3 brands and 5 questions do we rehearse? These decide what data to collect first.
+3. **Default weights** — what are the industry-best-practice values for each preset?
+4. **Hackathon logistics** — deadline, judging criteria, and owners for data, AI, front end, and pitch.
+5. **Price point to test** — $99, $199 or $499 per month.
