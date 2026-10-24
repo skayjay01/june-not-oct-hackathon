@@ -33,6 +33,8 @@ export interface TrendMetrics {
   growth?: number;
   /** number of tracked stores carrying it */
   store_count?: number;
+  /** dated points for trend lines, e.g. weekly Google Trends interest; oldest first */
+  series?: { date: string; value: number }[];
 }
 
 /** One row of `trend_items`. brand_id null = public data; set = that brand's licensed data only (FR-8). */
