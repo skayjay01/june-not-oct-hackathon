@@ -1,7 +1,7 @@
 {
   "version": "0.2",
   "owner": "Blair (Workstream C)",
-  "note": "Attribute vocabularies for Trend library items. Matches the TrendItem fields: silhouette, material, pattern, plus details. Use 'id' in data; 'label' in the UI. 'shoe_shapes' added 2026-10-24 for footwear design trends.",
+  "note": "Attribute vocabularies for Trend library items. Matches the TrendItem fields: silhouette, material, pattern, plus details. Use 'id' in data; 'label' in the UI. 'shoe_shapes' added 2026-10-24 for footwear design trends. 'bag_shapes' added 2026-10-24.",
   "silhouettes": [
     {
       "id": "oversized",
@@ -406,6 +406,40 @@
     {
       "id": "jelly",
       "label": "Jelly shoe"
+    }
+  ],
+  "bag_shapes": [
+    {
+      "id": "flap-chain",
+      "label": "Flap bag on a chain"
+    },
+    {
+      "id": "east-west",
+      "label": "East-west bag"
+    },
+    {
+      "id": "mini-purse",
+      "label": "Mini bag / coin purse"
+    },
+    {
+      "id": "minaudiere",
+      "label": "Minaudière"
+    },
+    {
+      "id": "crochet-bag",
+      "label": "Crochet bag"
+    },
+    {
+      "id": "studded-bag",
+      "label": "Studded bag"
+    },
+    {
+      "id": "slouchy-hobo",
+      "label": "Slouchy hobo"
+    },
+    {
+      "id": "top-handle",
+      "label": "Top-handle bag"
     }
   ]
 }
