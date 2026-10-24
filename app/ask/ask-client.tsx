@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { DashboardEvent, DashboardSpec, TrendItem, Widget } from "@/lib/contracts";
 import { Button, inputClass } from "@/components/form";
 import { WidgetCard } from "@/components/dashboard/widgets";
-import { loadEvidence } from "./actions";
+import { WeightsEditor, type Preset, type WeightValues } from "@/components/weights-editor";
+import { saveWeights } from "@/app/brands/[id]/settings/actions";
+import { loadEvidence, loadWeights, rerank } from "./actions";
 
 type Brand = { id: string; name: string };
 
@@ -23,7 +25,19 @@ type View = {
 
 const empty = (question: string): View => ({ question, title: "", summary: "", widgets: [], pendingIds: [], spec: null, notice: null, error: null, cached: false, seconds: null });
 
-export function AskClient({ brands, initialBrand, initialQuestion, examples }: { brands: Brand[]; initialBrand: string; initialQuestion: string; examples: string[] }) {
+export function AskClient({
+  brands,
+  initialBrand,
+  initialQuestion,
+  examples,
+  presets,
+}: {
+  brands: Brand[];
+  initialBrand: string;
+  initialQuestion: string;
+  examples: string[];
+  presets: Preset[];
+}) {
   const [brandId, setBrandId] = useState(initialBrand);
   const [question, setQuestion] = useState(initialQuestion);
   const [followUp, setFollowUp] = useState("");
@@ -182,6 +196,16 @@ export function AskClient({ brands, initialBrand, initialQuestion, examples }: {
         </form>
       )}
 
+      {view?.spec && !busy && (
+        <RerankPanel
+          key={`${brandId}:${view.spec.question}`}
+          brandId={brandId}
+          presets={presets}
+          onRanked={(spec) => setView((v) => (v ? { ...v, spec, title: spec.title, summary: spec.summary, widgets: spec.widgets } : v))}
+          spec={view.spec}
+        />
+      )}
+
       {evidence && <EvidencePanel label={evidence.label} items={evidence.items} onClose={() => setEvidence(null)} />}
     </div>
   );
@@ -288,5 +312,58 @@ function EvidencePanel({ label, items, onClose }: { label: string; items: TrendI
         )}
       </aside>
     </div>
+  );
+}
+
+// Re-rank the current dashboard under different weights, with no AI call (US-007).
+function RerankPanel({ brandId, spec, presets, onRanked }: { brandId: string; spec: DashboardSpec; presets: Preset[]; onRanked: (s: DashboardSpec) => void }) {
+  const [open, setOpen] = useState(false);
+  const [w, setW] = useState<WeightValues | null>(null);
+  const [preset, setPreset] = useState<string | null>(null);
+  const [status, setStatus] = useState("");
+  const base = useRef(spec);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  async function openPanel() {
+    setOpen(true);
+    if (!w) {
+      const saved = await loadWeights(brandId);
+      setPreset(saved.preset);
+      setW({ price_fit: saved.price_fit, social_buzz: saved.social_buzz, growth_speed: saved.growth_speed, competitor_adoption: saved.competitor_adoption, style_fit: saved.style_fit });
+    }
+  }
+
+  function change(next: WeightValues, p: string | null) {
+    setW(next);
+    setPreset(p);
+    setStatus("Re-ranking…");
+    clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      const t0 = performance.now();
+      onRanked(await rerank(brandId, base.current, next));
+      setStatus(`Re-ranked in ${Math.round(performance.now() - t0)} ms, no AI call.`);
+    }, 350);
+  }
+
+  if (!open) {
+    return (
+      <button type="button" onClick={openPanel} className="self-start text-sm text-zinc-500 underline-offset-2 hover:underline">
+        Adjust what matters (re-rank without asking again)
+      </button>
+    );
+  }
+  return (
+    <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <h3 className="font-semibold">What matters most</h3>
+      {w ? <WeightsEditor value={w} presets={presets} preset={preset} onChange={change} /> : <p className="text-sm text-zinc-500">Loading…</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        {w && (
+          <Button type="button" variant="secondary" onClick={async () => setStatus((await saveWeights(brandId, w, preset)).message)}>
+            Save as this brand&apos;s weights
+          </Button>
+        )}
+        {status && <p className="text-sm text-zinc-500">{status}</p>}
+      </div>
+    </section>
   );
 }
