@@ -47,7 +47,8 @@
 }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding:0 16px}
-.wrap{max-width:1180px;margin:0 auto;padding-block:40px 64px;display:grid;gap:48px}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 64px;display:grid;grid-template-columns:minmax(0,1fr);gap:48px}
+.wrap>*{min-width:0}
 h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
 h1{font-size:clamp(30px,5vw,46px);font-weight:700;letter-spacing:-.01em}
 h2{font-size:24px;font-weight:700}
