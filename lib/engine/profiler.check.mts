@@ -3,7 +3,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import type { BrandProfile } from "../contracts/types";
-import { buildProfileFrom, cleanProfile, compactPages, type CrawlPage, type ProfileVocab, type RawProfile } from "./profiler";
+import { buildProfileFrom, cleanProfile, compactPages, parseProducts, typicalPriceRange, type CrawlPage, type ProfileVocab, type RawProfile } from "./profiler";
 
 function vocab(): ProfileVocab {
   const dir = "data/curation";
@@ -110,6 +110,60 @@ await test("no crawled text gives a clear error", async () => {
   } catch (e) {
     expect((e as Error).message.includes("run the crawl first"), (e as Error).message);
   }
+});
+
+// Crawled store pages ("Title\nType\nTags\nPrice\nDescription"), shaped like a real catalog:
+// a 200-item football collab crawled first, a few sweaters and trousers, and one $6000 gold ring.
+const shopPage = (i: number, title: string, type: string, price: number, desc = "Relaxed fit. Made in Portugal.") => ({
+  url: `https://shop.example/products/${i}`, kind: "product" as const,
+  text: `${title}\nType: ${type}\nTags: dev-style-number-${i}, AltText_tagged, best_seller\nPrice: ${price}\n${desc}`,
+});
+const shop: CrawlPage[] = [
+  { url: "https://shop.example/", kind: "other", text: "FREE delivery over $250 Shop New In Trending Gift Guide Menu Search Account Cart" },
+  { url: "https://shop.example/pages/about", kind: "about", text: "FREE delivery over $250 Shop New In Trending Gift Guide Menu Search Account Cart About us: playful prints and romantic dresses, made to be worn loudly." },
+  ...Array.from({ length: 200 }, (_, i) => shopPage(i, `Club Collab Cap ${i}`, "Hats", 80 + (i % 40))),
+  ...Array.from({ length: 6 }, (_, i) => shopPage(100 + i, `Cable Knit Sweater ${i}`, "Sweaters", 250 + i * 10)),
+  ...Array.from({ length: 4 }, (_, i) => shopPage(200 + i, `Pleated Trouser ${i}`, "Pants", 220 + i * 10)),
+  shopPage(300, "14kt Gold Crest Ring", "Jewelry", 6000),
+];
+
+await test("catalog: every product type is sampled, not just the first ones crawled", () => {
+  const t = compactPages(shop);
+  expect(/211 products\. Types: Hats 200, Sweaters 6, Pants 4, Jewelry 1/.test(t), t.split("\n").find((l) => l.startsWith("[products]")) ?? "no overview line");
+  expect(t.includes("Cable Knit Sweater 0") && t.includes("Pleated Trouser 0") && t.includes("14kt Gold Crest Ring"), "a type is missing from the sample");
+  const hats = t.split("\n").filter((l) => l.includes("Club Collab Cap")).length;
+  const sweaters = t.split("\n").filter((l) => l.includes("Cable Knit Sweater")).length;
+  expect(sweaters === 6 && hats < 200, `sample not spread evenly (hats ${hats}, sweaters ${sweaters})`);
+});
+
+await test("catalog: merchandising tags never reach the AI", () => {
+  const t = compactPages(shop);
+  expect(!t.includes("dev-style-number") && !t.includes("AltText_tagged"), "tags leaked into the prompt");
+});
+
+await test("catalog: price range is the middle 80%, so one $6000 ring can't stretch it", () => {
+  const r = typicalPriceRange(parseProducts(shop));
+  expect(r !== null && r.min >= 80 && r.max < 1000 && r.median > 80, JSON.stringify(r));
+  expect(typicalPriceRange(parseProducts(shop.slice(0, 5))) === null, "fewer than 5 prices should give no range");
+});
+
+await test("catalog: built profile uses the real price band, unless the founder edited it", async () => {
+  const ask = async () => ({ ...messy, price_min: 30, price_max: 6000 });
+  const p = await buildProfileFrom({ brandId: "b1", pages: shop, vocab: V, ask });
+  const r = typicalPriceRange(parseProducts(shop))!;
+  expect(p.price_min === r.min && p.price_max === r.max, `${p.price_min}–${p.price_max} vs ${r.min}–${r.max}`);
+  const previous = { ...p, price_min: 10, price_max: 20, edited_fields: ["price_min", "price_max"] } as BrandProfile;
+  const kept = await buildProfileFrom({ brandId: "b1", pages: shop, vocab: V, ask, previous });
+  expect(kept.price_min === 10 && kept.price_max === 20, "edited prices were overwritten");
+});
+
+await test("about: menus shared with the home page are cut, the brand's words kept", () => {
+  const about = compactPages(shop).split("\n").find((l) => l.startsWith("[about]")) ?? "";
+  expect(about.startsWith("[about] About us: playful prints"), about);
+});
+
+await test("plain-text product pages still work as before", () => {
+  expect(parseProducts(pages).length === 0 && compactPages(pages).includes("[product] Oatmeal linen midi dress"), "fallback broke");
 });
 
 console.log(existsSync("data/curation/style-tags.json") ? "vocab: Blair's data/curation" : "vocab: stand-in (data/curation not merged)");

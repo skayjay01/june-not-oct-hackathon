@@ -49,11 +49,18 @@ const BUDGET: Record<PageKind, number> = { about: 6000, product: 9000, alt: 2500
 
 export function compactPages(pages: CrawlPage[]): string {
   const out: string[] = [];
+  const shared = pages.filter((p) => p.kind === "other").map((p) => flat(p.text));
+  const catalog = parseProducts(pages);
   for (const kind of Object.keys(BUDGET) as PageKind[]) {
+    if (kind === "product" && catalog.length) {
+      out.push(catalogDigest(catalog, BUDGET.product));
+      continue;
+    }
     let left = BUDGET[kind];
     const seen = new Set<string>();
     for (const p of pages.filter((x) => x.kind === kind)) {
-      const t = p.text.replace(/\s+/g, " ").trim();
+      // About pages often start with the same menus and banners as the home page; drop that shared lead-in
+      const t = kind === "about" ? stripSharedLead(flat(p.text), shared) : flat(p.text);
       if (!t || seen.has(t) || left <= 0) continue;
       seen.add(t);
       const piece = t.slice(0, Math.min(left, 1500));
@@ -62,6 +69,94 @@ export function compactPages(pages: CrawlPage[]): string {
     }
   }
   return out.join("\n");
+}
+
+const flat = (s: string) => s.replace(/\s+/g, " ").trim();
+
+/** Removes the longest lead-in (≥ 40 chars) this text shares with any of `others`. */
+function stripSharedLead(text: string, others: string[]): string {
+  let cut = 0;
+  for (const o of others) {
+    let i = 0;
+    while (i < text.length && i < o.length && text[i] === o[i]) i++;
+    if (i >= 40 && i > cut) cut = i;
+  }
+  return text.slice(cut).trim() || text;
+}
+
+// ---------- product catalog ----------
+
+export interface CatalogItem {
+  title: string;
+  type: string | null;
+  price: number | null;
+  description: string;
+}
+
+/**
+ * Product pages saved by the crawler as "Title\nType: …\nTags: …\nPrice: …\nDescription".
+ * Pages without that shape are left to the plain-text path. Tags are dropped: they are mostly
+ * internal merchandising codes.
+ */
+export function parseProducts(pages: CrawlPage[]): CatalogItem[] {
+  const items: CatalogItem[] = [];
+  const seen = new Set<string>();
+  for (const p of pages) {
+    if (p.kind !== "product") continue;
+    const lines = p.text.split("\n").map((l) => l.trim()).filter(Boolean);
+    const field = (name: string) => lines.find((l) => l.startsWith(`${name}: `))?.slice(name.length + 2).trim() ?? null;
+    const type = field("Type");
+    const priceText = field("Price");
+    if (type === null && priceText === null) return []; // not the structured format: use plain text for all
+    const title = lines[0];
+    if (!title || seen.has(title)) continue;
+    seen.add(title);
+    const price = priceText !== null && Number.isFinite(Number(priceText)) ? Number(priceText) : null;
+    const description = flat(lines.slice(1).filter((l) => !/^(Type|Tags|Price): /.test(l)).join(" "));
+    items.push({ title, type: type || null, price, description });
+  }
+  return items;
+}
+
+/** The middle 80% of prices (10th–90th percentile), so one couture piece can't stretch the range. Needs 5+ prices. */
+export function typicalPriceRange(items: CatalogItem[]): { min: number; max: number; median: number } | null {
+  const prices = items.map((i) => i.price).filter((p): p is number => p !== null && p > 0).sort((a, b) => a - b);
+  if (prices.length < 5) return null;
+  const at = (q: number) => prices[Math.min(prices.length - 1, Math.floor(q * prices.length))];
+  return { min: Math.round(at(0.1)), max: Math.round(at(0.9)), median: Math.round(at(0.5)) };
+}
+
+/** Whole-catalog overview plus a sample spread evenly across product types, within `budget` characters. */
+function catalogDigest(items: CatalogItem[], budget: number): string {
+  const byType = new Map<string, CatalogItem[]>();
+  for (const i of items) byType.set(i.type ?? "Other", [...(byType.get(i.type ?? "Other") ?? []), i]);
+  const types = [...byType].sort((a, b) => b[1].length - a[1].length);
+  const range = typicalPriceRange(items);
+  const head = [
+    `[products] ${items.length} products. Types: ${types.map(([t, xs]) => `${t} ${xs.length}`).join(", ")}.`,
+    range ? `Typical price ${range.min}–${range.max} (median ${range.median}).` : "",
+  ].join(" ");
+
+  // round-robin over types so the sample mirrors the catalog's breadth, not the crawl order
+  const lines: string[] = [];
+  let left = budget - head.length;
+  for (let round = 0; left > 0; round++) {
+    let added = false;
+    for (const [, xs] of types) {
+      const i = xs[round];
+      if (!i) continue;
+      const line = `[product] ${i.title} (${i.type ?? "Other"}${i.price !== null ? `, ${i.price}` : ""}) ${i.description.slice(0, 160)}`;
+      if (line.length > left) {
+        left = 0;
+        break;
+      }
+      lines.push(line);
+      left -= line.length + 1;
+      added = true;
+    }
+    if (!added) break;
+  }
+  return [head, ...lines].join("\n");
 }
 
 const slug = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -147,6 +242,9 @@ export async function buildProfileFrom(opts: {
     return checkProfile(c, idSets).filter((e) => !e.startsWith("colors") && !e.startsWith("categories"));
   };
   const cleaned = cleanProfile(await ask({ system, prompt, schema: brandProfileSchema, validate }), vocab);
+  // real catalog prices beat the AI's reading of a handful of them
+  const range = typicalPriceRange(parseProducts(pages));
+  if (range) [cleaned.price_min, cleaned.price_max] = [range.min, range.max];
 
   const edited = new Set<EditableField>(previous?.edited_fields ?? []);
   const keep = <K extends EditableField>(k: K, fresh: BrandProfile[K]): BrandProfile[K] => (previous && edited.has(k) ? previous[k] : fresh);
