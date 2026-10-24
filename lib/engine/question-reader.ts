@@ -71,7 +71,7 @@ export async function readQuestion(question: string, opts: ReadOptions): Promise
   }
   try {
     const raw = await opts.ask({
-      step: "question_reader",
+      step: "interpret",
       system: systemPrompt(opts.vocab),
       prompt: q,
       schema: questionIntentSchema,

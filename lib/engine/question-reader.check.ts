@@ -80,7 +80,7 @@ expect("normalize: garbage input still valid", checkIntent(normalizeIntent(null,
 
 // 4. readQuestion: AI path, AI failure → keywords, and input limits.
 const fakeAsk: AskJson = async (req) => {
-  if (req.step !== "question_reader" || req.schemaName !== "question_intent" || !req.system.includes("dresses")) throw new Error("bad request shape");
+  if (req.step !== "interpret" || req.schemaName !== "question_intent" || !req.system.includes("dresses")) throw new Error("bad request shape");
   return { in_scope: true, suggestion: null, style_tags: [], categories: ["dresses"], price_min: null, price_max: 50, focus: "color", emphasis: [], time_window_days: 90 };
 };
 const failingAsk: AskJson = async () => {
