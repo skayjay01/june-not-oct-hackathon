@@ -16,13 +16,16 @@ export type ScheduleResult = { brand: string; sent: boolean; note: string };
 export async function sendDueDigests(now = new Date()): Promise<ScheduleResult[]> {
   const { data: brands, error } = await db()
     .from("brands")
-    .select("id, name, digest_channel, digest_frequency, brand_profiles!inner(brand_id)")
+    .select("id, name, email, slack_webhook_url, digest_channel, digest_frequency, brand_profiles!inner(brand_id)")
     .order("created_at");
   if (error) throw error;
 
   const results: ScheduleResult[] = [];
   for (const b of brands) {
     if (results.filter((r) => r.sent).length >= MAX_PER_RUN) break;
+    // Skip brands with nowhere to deliver before spending an AI call on their digest.
+    const reachable = b.digest_channel === "email" ? !!b.email : b.digest_channel === "slack" ? !!b.slack_webhook_url : !!process.env.WHATSAPP_TOKEN;
+    if (!reachable) continue;
     const { data: last } = await db()
       .from("digests")
       .select("sent_at")
