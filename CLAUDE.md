@@ -2,8 +2,8 @@
 
 Hackathon project with two teammates, who have access to this project's resources only, never other company resources.
 
-- **Yizhi** — yhuang@mba2028.hbs.edu, GitHub `coachbhuang`
-- **Blair** — blzhang@mba2027.hbs.edu, GitHub `zhangjiayuanmun9-code`
+- **Yizhi** — GitHub `coachbhuang`
+- **Blair** — GitHub `zhangjiayuanmun9-code`
 
 ## Stack
 
