@@ -1,0 +1,216 @@
+{
+  "version": "0.1",
+  "owner": "Blair (Workstream C)",
+  "note": "How much each reference brand's runway and Lyst signals count when the matcher ranks trends. Set by Blair 2026-10-24. Multipliers apply to a signal's score; 1.0 is neutral. Signal ids point to editorial-signals.csv.",
+  "brands": [
+    {
+      "brand": "Miu Miu",
+      "weight": 1.0
+    },
+    {
+      "brand": "Prada",
+      "weight": 1.0
+    },
+    {
+      "brand": "Aimé Leon Dore",
+      "weight": 1.0
+    },
+    {
+      "brand": "Damson Madder",
+      "weight": 1.0
+    },
+    {
+      "brand": "Massimo Dutti",
+      "weight": 1.0
+    },
+    {
+      "brand": "Paloma Wool",
+      "weight": 1.0
+    }
+  ],
+  "dimension_overrides": {
+    "color": {
+      "Prada": 2.0
+    },
+    "material": {
+      "Prada": 2.0
+    }
+  },
+  "cross_check": {
+    "brand": "Prada",
+    "against": "Chanel",
+    "dimensions": [
+      "color",
+      "material"
+    ],
+    "rule": "A Prada color or fabric signal gets its 2.0 weight only when Chanel shows the same trend family in the same season (status confirmed). Partial matches get 1.5. Prada-only signals fall back to 1.0. Chanel is a check brand only: its own signals are not weighted up.",
+    "status_multiplier": {
+      "confirmed": 2.0,
+      "partial": 1.5,
+      "prada_only": 1.0,
+      "chanel_only": 1.0
+    },
+    "results": [
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Green",
+        "prada": "prada-ss27-green",
+        "chanel": "green-ss27",
+        "status": "confirmed"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Sheer layers",
+        "prada": "prada-ss27-sheer",
+        "chanel": "chanel-ss27-sheer",
+        "status": "confirmed"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Shirting",
+        "prada": "prada-ss27-shirting",
+        "chanel": "chanel-ss27-shirting",
+        "status": "confirmed"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Sequin, bead and crystal embellishment",
+        "prada": "prada-ss27-embellish",
+        "chanel": "chanel-ss27-sequin",
+        "status": "confirmed"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Satin and silk",
+        "prada": "prada-ss27-satin",
+        "chanel": "chanel-ss27-sheer",
+        "status": "partial",
+        "why": "Prada shows satin; Chanel shows silk transparencies, a related but different finish"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Yellow",
+        "prada": "prada-ss27-yellow",
+        "chanel": null,
+        "status": "prada_only",
+        "why": "Chanel showed buttercream yellow for FW26, not reported for SS27"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Bright red",
+        "prada": "prada-ss27-red",
+        "chanel": null,
+        "status": "prada_only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Grey base",
+        "prada": "prada-ss27-grey",
+        "chanel": null,
+        "status": "prada_only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Leather",
+        "prada": "prada-ss27-leather",
+        "chanel": null,
+        "status": "prada_only",
+        "why": "Chanel's leather is accessories only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "color",
+        "trend": "Orange",
+        "prada": null,
+        "chanel": "orange-ss27",
+        "status": "chanel_only"
+      },
+      {
+        "season": "SS27",
+        "dimension": "material",
+        "trend": "Tweed",
+        "prada": null,
+        "chanel": "chanel-ss27-tweed",
+        "status": "chanel_only"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Sheer layers",
+        "prada": "prada-fw26-sheer",
+        "chanel": "chanel-fw26-sheer",
+        "status": "confirmed"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Embroidery and florals",
+        "prada": "prada-fw26-embroidery",
+        "chanel": "chanel-fw26-embroidery",
+        "status": "confirmed"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Knitwear",
+        "prada": "prada-fw26-knit",
+        "chanel": "chanel-fw26-knit",
+        "status": "confirmed"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Sequin and metallic shine",
+        "prada": "prada-fw26-sequin",
+        "chanel": "chanel-fw26-metallic",
+        "status": "confirmed"
+      },
+      {
+        "season": "FW26",
+        "dimension": "color",
+        "trend": "Yellow",
+        "prada": "prada-fw26-yellow",
+        "chanel": "buttercream-fw26",
+        "status": "partial",
+        "why": "Same family, different shade: Prada acid yellow vs Chanel buttercream"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Fur",
+        "prada": "prada-fw26-fur",
+        "chanel": null,
+        "status": "prada_only"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Lace",
+        "prada": null,
+        "chanel": "chanel-fw26-lace",
+        "status": "chanel_only"
+      },
+      {
+        "season": "FW26",
+        "dimension": "material",
+        "trend": "Tweed and boucle",
+        "prada": null,
+        "chanel": "chanel-fw26-tweed",
+        "status": "chanel_only"
+      }
+    ]
+  },
+  "assumptions": [
+    "'More weight' for Prada read as 2x; change dimension_overrides to adjust.",
+    "'Equal weight' means 1.0 for every demo brand on all other dimensions."
+  ]
+}

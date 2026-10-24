@@ -1,0 +1,49 @@
+{
+  "version": "0.1",
+  "owner": "Blair (Workstream C)",
+  "note": "Default weight presets (PRD US-007, FR-15). Each preset's five dimensions total 100. Ids match the Weights contract (lib/contracts/types.ts). Values are the team's judgement, not an external standard.",
+  "presets": [
+    {
+      "id": "price-sensitive",
+      "label": "Price-sensitive / mass market",
+      "price_fit": 30,
+      "social_buzz": 20,
+      "growth_speed": 25,
+      "competitor_adoption": 10,
+      "style_fit": 15,
+      "reason": "Mass-market brands win on price and speed: a trend only matters if it sells at their price and is rising fast enough to test in weeks.",
+      "demo_brands": [
+        "Massimo Dutti",
+        "Damson Madder"
+      ]
+    },
+    {
+      "id": "niche-streetwear",
+      "label": "Niche streetwear",
+      "price_fit": 10,
+      "social_buzz": 30,
+      "growth_speed": 20,
+      "competitor_adoption": 10,
+      "style_fit": 30,
+      "reason": "Streetwear runs on community buzz and identity: a trend has to fit the brand's look and be talked about, while price matters less to loyal buyers.",
+      "demo_brands": [
+        "Aimé Leon Dore"
+      ]
+    },
+    {
+      "id": "fashion-house",
+      "label": "Fashion house / editorial",
+      "price_fit": 5,
+      "social_buzz": 20,
+      "growth_speed": 15,
+      "competitor_adoption": 25,
+      "style_fit": 35,
+      "reason": "Houses set direction: what matters is fit with the house codes and what peer houses show on the runway, not price or short-term spikes.",
+      "demo_brands": [
+        "Miu Miu",
+        "Prada",
+        "Paloma Wool"
+      ]
+    }
+  ]
+}
