@@ -89,6 +89,9 @@ expect("normalize: window clamped", messy.time_window_days === 730, String(messy
 expect("normalize: in-scope clears suggestion", messy.suggestion === null);
 const outNoSuggestion = normalizeIntent({ in_scope: false, suggestion: "" }, opts);
 expect("normalize: out-of-scope always gets a suggestion", !outNoSuggestion.in_scope && !!outNoSuggestion.suggestion, JSON.stringify(outNoSuggestion));
+const withAside = normalizeIntent({ in_scope: false, suggestion: "x", aside: " Gift shopping? We do trends. " }, opts);
+expect("normalize: out-of-scope keeps the AI's aside", withAside.aside === "Gift shopping? We do trends.", JSON.stringify(withAside));
+expect("normalize: overlong aside dropped", normalizeIntent({ in_scope: false, suggestion: "x", aside: "a".repeat(300) }, opts).aside === null);
 expect("normalize: garbage input still valid", checkIntent(normalizeIntent(null, opts), vocab).length === 0);
 
 // 3b. Follow-ups (US-009) without the AI: start from the earlier reading, change only what's stated.

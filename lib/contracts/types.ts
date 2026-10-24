@@ -116,6 +116,8 @@ export interface QuestionIntent {
   in_scope: boolean;
   /** set when in_scope is false: an answerable question to suggest instead (FR-14) */
   suggestion: string | null;
+  /** set when in_scope is false: one playful line that riffs on what was actually asked */
+  aside?: string | null;
   style_tags: StyleTagId[];
   categories: CategoryId[];
   /** colors the question names; a family word ("green") means that family's ids */

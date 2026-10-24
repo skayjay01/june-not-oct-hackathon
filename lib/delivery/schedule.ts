@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db/server";
 import { engine } from "@/lib/engine";
+import { refreshStaleConnections } from "@/lib/sources/licensed";
 import { sendDigest, type Channel } from "./send-digest";
 
 // The scheduler (US-004, FR-5): builds and sends digests for brands that are due.
@@ -15,13 +16,16 @@ export type ScheduleResult = { brand: string; sent: boolean; note: string };
 export async function sendDueDigests(now = new Date()): Promise<ScheduleResult[]> {
   const { data: brands, error } = await db()
     .from("brands")
-    .select("id, name, digest_channel, digest_frequency, brand_profiles!inner(brand_id)")
+    .select("id, name, email, slack_webhook_url, digest_channel, digest_frequency, brand_profiles!inner(brand_id)")
     .order("created_at");
   if (error) throw error;
 
   const results: ScheduleResult[] = [];
   for (const b of brands) {
     if (results.filter((r) => r.sent).length >= MAX_PER_RUN) break;
+    // Skip brands with nowhere to deliver before spending an AI call on their digest.
+    const reachable = b.digest_channel === "email" ? !!b.email : b.digest_channel === "slack" ? !!b.slack_webhook_url : !!process.env.WHATSAPP_TOKEN;
+    if (!reachable) continue;
     const { data: last } = await db()
       .from("digests")
       .select("sent_at")
@@ -33,6 +37,7 @@ export async function sendDueDigests(now = new Date()): Promise<ScheduleResult[]
     const hours = last?.sent_at ? (now.getTime() - new Date(last.sent_at).getTime()) / 3_600_000 : Infinity;
     if (hours < DUE_AFTER_H[b.digest_frequency as keyof typeof DUE_AFTER_H]) continue;
     try {
+      await refreshStaleConnections(b.id); // the brand's own API-key sources, e.g. Perplexity
       const digest = await engine.buildDigest(b.id);
       await sendDigest(b.id, digest, b.digest_channel as Channel);
       results.push({ brand: b.name, sent: true, note: `sent by ${b.digest_channel}` });
