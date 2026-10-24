@@ -12,7 +12,7 @@ Hackathon project by Yishan, Yizhi and Blair. The full spec is the [PRD](tasks/p
 
 ## The big picture
 
-🗺️ **Interactive version:** [Ask-a-Trend System Map](https://claude.ai/artifact/AcexiszwTrrh6cQYxmP4NT) — tap any part to see what it calls, what data it touches, and who builds it. (Private page: ask Yishan to share it with you.)
+🗺️ **Interactive version:** [Ask-a-Trend System Map](https://june-not-oct-hackathon.vercel.app/system-map.html) — tap any part to see what it calls, what data it touches, and who builds it. The page lives in this repo at [`public/system-map.html`](public/system-map.html); open it straight from your laptop too.
 
 Everything in one map, top to bottom: **people** use the **app**; the app hands work to the **engine**; the engine reads and saves **our data** and reaches **outside services** for AI, trend sources and message delivery. The three journeys below show each path step by step.
 

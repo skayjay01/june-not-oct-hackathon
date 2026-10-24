@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ask-a-Trend System Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#F4F5F8; --surface:#FFFFFF; --ink:#151A33; --muted:#5B6179; --line:#DADDE7;
+  --accent:#2747D6; --accent-ink:#FFFFFF;
+  --people:#E8506B; --people-bg:#FDE7EB;
+  --app:#2747D6; --app-bg:#E4E9FC;
+  --engine:#B7791F; --engine-bg:#FBF0D9;
+  --data:#1F8A5B; --data-bg:#DDF3E8;
+  --out:#7448C9; --out-bg:#ECE4FA;
+  --dim:.28;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F1222; --surface:#181C30; --ink:#ECEEF7; --muted:#9CA2BD; --line:#2B3050;
+    --accent:#7D93FF; --accent-ink:#0F1222;
+    --people:#FF8096; --people-bg:#3A1C26;
+    --app:#8EA1FF; --app-bg:#1D2550;
+    --engine:#F0B85A; --engine-bg:#3A2C12;
+    --data:#5CD39C; --data-bg:#123327;
+    --out:#B79BFF; --out-bg:#2A1F47;
+    --dim:.22;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1222; --surface:#181C30; --ink:#ECEEF7; --muted:#9CA2BD; --line:#2B3050;
+  --accent:#7D93FF; --accent-ink:#0F1222;
+  --people:#FF8096; --people-bg:#3A1C26;
+  --app:#8EA1FF; --app-bg:#1D2550;
+  --engine:#F0B85A; --engine-bg:#3A2C12;
+  --data:#5CD39C; --data-bg:#123327;
+  --out:#B79BFF; --out-bg:#2A1F47;
+  --dim:.22;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding:0 16px}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 64px;display:grid;gap:48px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(30px,5vw,46px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header{display:grid;gap:14px;max-width:760px}
+header p.lede{font-size:17px;color:var(--muted);max-width:62ch}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:4px 10px 4px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.sec-head{display:grid;gap:6px;margin-bottom:18px}
+.sec-head p{color:var(--muted);max-width:68ch}
+
+/* map */
+.map{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.lanes{display:grid;grid-template-columns:.7fr 1fr 1.35fr 1fr 1fr;gap:10px}
+.lane{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:14px;background:var(--lane-bg);min-width:0}
+.lane-title{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--lane);padding:2px 2px 4px;font-weight:500}
+.node{appearance:none;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid transparent;border-radius:10px;padding:9px 10px;cursor:pointer;display:grid;gap:2px;transition:opacity .18s,border-color .18s,transform .18s;box-shadow:0 1px 0 var(--line)}
+.node strong{font-size:13.5px;font-weight:600;line-height:1.25}
+.node span{font-size:12px;color:var(--muted);line-height:1.3}
+.node .ai{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--engine);text-transform:uppercase}
+.node:hover{border-color:var(--lane)}
+.node:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lanes.focus .node{opacity:var(--dim)}
+.lanes.focus .node.rel{opacity:1;border-color:var(--lane)}
+.lanes.focus .node.sel{opacity:1;border-color:var(--ink);transform:translateY(-1px);box-shadow:0 6px 18px -10px rgba(0,0,0,.45)}
+.node .tag{justify-self:start;margin-top:4px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:5px;background:var(--lane-bg);color:var(--lane);display:none}
+.lanes.focus .node.rel .tag{display:inline-block}
+
+.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:14px}
+.panel .who{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel h3{font-size:22px}
+.panel .desc{color:var(--muted)}
+.rels{display:grid;gap:12px}
+.rel-group{display:grid;gap:6px}
+.rel-group .eyebrow{font-size:10.5px}
+.rel-list{display:flex;flex-wrap:wrap;gap:6px}
+.rel-list button{appearance:none;font:inherit;font-size:12.5px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:3px 10px 3px 7px;display:inline-flex;gap:6px;align-items:center}
+.rel-list button:hover{border-color:var(--accent)}
+.owner{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:3px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--line)}
+.hint{font-size:12.5px;color:var(--muted)}
+
+/* journeys */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{appearance:none;font:inherit;font-weight:600;font-size:14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 14px}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.journey-intro{color:var(--muted);margin-bottom:14px;max-width:70ch}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;counter-reset:s}
+.step{counter-increment:s;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 13px;display:grid;gap:6px;align-content:start;border-top:3px solid var(--lane)}
+.step::before{content:counter(s);font-family:var(--mono);font-size:12px;color:var(--muted)}
+.step p{font-size:14px}
+.step .by{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--lane);font-weight:600}
+.loop{margin-top:12px;font-size:13.5px;color:var(--muted)}
+
+/* table */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+td:first-child .dot{display:inline-block;margin-right:8px;vertical-align:-1px}
+
+/* owners */
+.owners{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.owner-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:8px;align-content:start}
+.owner-card .pct{font-family:var(--display);font-size:30px;font-weight:700;line-height:1}
+.owner-card ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:grid;gap:3px}
+footer{color:var(--muted);font-size:13px}
+footer a{color:var(--accent)}
+
+@media (max-width:960px){
+  .map{grid-template-columns:1fr}
+  .panel{position:static}
+}
+@media (max-width:720px){
+  .lanes{grid-template-columns:1fr 1fr}
+  .lane.people{grid-column:1 / -1}
+  .lane.people .node{max-width:none}
+}
+@media (max-width:420px){ .lanes{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ .node{transition:none} }
+</style>
+</head>
+<body style="margin:0">
+<div class="wrap">
+  <header>
+    <div class="eyebrow">June not Oct Hackathon · how the pieces fit</div>
+    <h1>Ask-a-Trend System Map</h1>
+    <p class="lede">Ask-a-Trend learns a fashion brand's style from its own website, then sends it on-trend ideas that fit that look. Brands can also ask any trend question and get a dashboard. Tap any part below to see what it calls, what data it touches, and who builds it.</p>
+    <div class="legend" aria-label="Colour key">
+      <span class="chip"><span class="dot" style="background:var(--people)"></span>People</span>
+      <span class="chip"><span class="dot" style="background:var(--app)"></span>Screens in the app</span>
+      <span class="chip"><span class="dot" style="background:var(--engine)"></span>Engine, behind the scenes</span>
+      <span class="chip"><span class="dot" style="background:var(--data)"></span>Stored data (Supabase)</span>
+      <span class="chip"><span class="dot" style="background:var(--out)"></span>Outside services</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="map-h">
+    <div class="sec-head">
+      <h2 id="map-h">The whole system</h2>
+      <p>Work flows left to right: a person uses a screen, the screen hands the job to the engine, and the engine reads and saves data and reaches outside services.</p>
+    </div>
+    <div class="map">
+      <div class="lanes focus" id="lanes"></div>
+      <aside class="panel" id="panel" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <section aria-labelledby="j-h">
+    <div class="sec-head">
+      <h2 id="j-h">The three journeys</h2>
+      <p>Each journey is one path through the map, in the order it happens.</p>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <p class="journey-intro" id="jintro"></p>
+    <ol class="steps" id="steps"></ol>
+    <p class="loop" id="jloop"></p>
+  </section>
+
+  <section aria-labelledby="d-h">
+    <div class="sec-head">
+      <h2 id="d-h">Who touches which data</h2>
+      <p>Every piece of stored data, who saves it, and who reads it.</p>
+    </div>
+    <div class="tbl-wrap"><table id="dtable">
+      <thead><tr><th>Data</th><th>What's in it</th><th>Saved by</th><th>Read by</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="o-h">
+    <div class="sec-head">
+      <h2 id="o-h">Who builds what</h2>
+      <p>The build is split three ways so each person's coding agent can work at the same time. Full detail is in the build plan in the repo.</p>
+    </div>
+    <div class="owners" id="owners"></div>
+  </section>
+
+  <footer>Source of truth: the PRD, README and build plan in the <a href="https://github.com/skayjay01/june-not-oct-hackathon" target="_blank" rel="noopener">june-not-oct-hackathon</a> repo. Live site: <a href="https://june-not-oct-hackathon.vercel.app" target="_blank" rel="noopener">june-not-oct-hackathon.vercel.app</a>.</footer>
+</div>
+
+<script>
+const LANES=[
+  {id:"people",name:"People",color:"--people",bg:"--people-bg"},
+  {id:"app",name:"The app",color:"--app",bg:"--app-bg"},
+  {id:"engine",name:"The engine",color:"--engine",bg:"--engine-bg"},
+  {id:"data",name:"Our data",color:"--data",bg:"--data-bg"},
+  {id:"out",name:"Outside",color:"--out",bg:"--out-bg"}
+];
+const OWN={Y:"Yishan",Z:"Yizhi",B:"Blair"};
+// uses: things this part calls or hands work to; reads/writes: data it touches
+const N=[
+  {id:"founder",lane:"people",name:"Brand founder",sub:"or a 1–3 person trend team",desc:"The customer. Signs up once, gets a digest every day or week, and asks questions whenever they like.",uses:["signup","ask","settings","dashboard"],owner:null},
+  {id:"signup",lane:"app",name:"Sign-up page",sub:"website + Instagram",desc:"Where a brand enters its website and Instagram. Starts the crawl and shows the style profile for the founder to check and edit.",uses:["crawler","profiler"],writes:["profiles"],owner:"Z"},
+  {id:"ask",lane:"app",name:"Question box",sub:"type a trend question",desc:"The founder types a question in plain English. If it was asked before, the saved answer comes back instantly.",uses:["reader","dashboard"],reads:["saved"],owner:"Z"},
+  {id:"dashboard",lane:"app",name:"Dashboard view",sub:"charts appear one by one",desc:"Draws the dashboard the engine planned, using a fixed set of chart types. Tap any chart to see the real products behind it.",reads:["trends"],owner:"Z"},
+  {id:"settings",lane:"app",name:"Settings",sub:"weights · sources · channel",desc:"Choose a preset or move the weight sliders, connect a paid source with the brand's own licence, and pick email, Slack or WhatsApp.",uses:["paid"],writes:["profiles","licensed"],owner:"Z"},
+
+  {id:"crawler",lane:"engine",name:"Crawler",sub:"reads public web pages",desc:"Reads the text on public pages, slowly and by the rules: the brand's own site for its profile, and trend sources for the trend library.",uses:["sources","profiler"],reads:["curation"],writes:["trends"],owner:"Z"},
+  {id:"profiler",lane:"engine",name:"Brand profiler",sub:"writes the style profile",ai:true,desc:"Turns the brand's About Us, product descriptions and captions into a style profile: style tags, price range, categories and colours. Words only, no image analysis.",uses:["switch"],reads:["curation"],writes:["profiles"],owner:"Y"},
+  {id:"reader",lane:"engine",name:"Question reader",sub:"works out what's asked",ai:true,desc:"Works out which style the question is about and what the founder cares about: price, colour, silhouette, growth. Off-topic questions get a suggested alternative.",uses:["switch","matcher"],owner:"Y"},
+  {id:"matcher",lane:"engine",name:"Matcher",sub:"finds + ranks trends",desc:"The heart of the engine. Finds trends that fit the brand's style and ranks them by the brand's weights, its licensed data, and its past likes and dislikes.",uses:["dashbuilder"],reads:["trends","profiles","licensed","feedback","curation"],owner:"Y"},
+  {id:"dashbuilder",lane:"engine",name:"Dashboard builder",sub:"picks charts, styles them",ai:true,desc:"Picks charts from the fixed set, fills them with real data, writes a short summary, and styles the result. The AI fills in a form; it never writes code for the page.",uses:["switch","dashboard"],writes:["saved"],owner:"Y"},
+  {id:"scheduler",lane:"engine",name:"Scheduler",sub:"daily / weekly alarm",desc:"Wakes up on each brand's schedule and asks for a fresh digest.",uses:["digest"],owner:"Z"},
+  {id:"digest",lane:"engine",name:"Digest builder",sub:"2–4 trends + real examples",ai:true,desc:"Asks the Matcher for trends that fit, then picks 2–4 with 3–5 real product examples each, names colours from the fixed list, and explains why each fits the brand.",uses:["matcher","switch","sender"],reads:["curation"],owner:"Y"},
+  {id:"sender",lane:"engine",name:"Sender",sub:"delivers + records 👍/👎",desc:"Sends the digest by email, Slack or WhatsApp, and records each like or dislike the founder taps.",uses:["channels"],writes:["feedback"],owner:"Z"},
+  {id:"switch",lane:"engine",name:"AI switchboard",sub:"one door to every AI model",desc:"Every AI request goes through here. It picks a fast, cheap model and switches to another account automatically if one runs out.",uses:["ai"],owner:"Y"},
+
+  {id:"trends",lane:"data",name:"Trend library",sub:"products, keywords, colours, fabrics",desc:"Everything the crawler has collected: new products, trending searches, colours and fabrics, each with its source and date.",owner:"Z"},
+  {id:"profiles",lane:"data",name:"Brand profiles",sub:"style, price, weights",desc:"Each brand's style profile, its chosen weights, and its digest channel.",owner:"Z"},
+  {id:"feedback",lane:"data",name:"Likes / dislikes",sub:"👍 / 👎 per digest item",desc:"Every tap on a digest item. The Matcher uses it so the next digest fits better.",owner:"Z"},
+  {id:"licensed",lane:"data",name:"Licensed data",sub:"private to each brand",desc:"Data from paid sources a brand connected with its own licence. Only ever shown to that brand.",owner:"Z"},
+  {id:"saved",lane:"data",name:"Saved answers",sub:"for instant replays",desc:"Finished dashboards, including the pre-made demo answers, so repeat questions load in under 2 seconds.",owner:"Z"},
+  {id:"curation",lane:"data",name:"Fashion lists",sub:"style tags, colours, stores, presets",desc:"The fashion vocabulary, the fixed colour list, the list of stores to collect from, and the weight presets. Chosen by Blair with a fashion eye.",owner:"B"},
+
+  {id:"ai",lane:"out",name:"AI models",sub:"Gemini · Claude · OpenAI",desc:"The outside AI services. Only the switchboard talks to them.",owner:null},
+  {id:"sources",lane:"out",name:"Free trend sources",sub:"Pinterest, Google Trends, store catalogs, museums",desc:"Public sources the crawler is allowed to read: Pinterest and Google Trends, smaller stores' public product lists, museum textile archives.",owner:null},
+  {id:"paid",lane:"out",name:"Paid sources",sub:"WGSN, Coloro, Pantone…",desc:"Licensed sources. We build the connection; each brand brings its own licence.",uses:["licensed"],owner:null},
+  {id:"channels",lane:"out",name:"Email · Slack · WhatsApp",sub:"where digests land",desc:"Where the founder reads the digest, without logging in to anything.",uses:["founder"],owner:null}
+];
+const byId=Object.fromEntries(N.map(n=>[n.id,n]));
+N.forEach(n=>{n.uses=n.uses||[];n.reads=n.reads||[];n.writes=n.writes||[];n.usedBy=[];n.readBy=[];n.writtenBy=[];});
+N.forEach(n=>{
+  n.uses.forEach(t=>byId[t].usedBy.push(n.id));
+  n.reads.forEach(t=>byId[t].readBy.push(n.id));
+  n.writes.forEach(t=>byId[t].writtenBy.push(n.id));
+});
+const laneOf=id=>LANES.find(l=>l.id===byId[id].lane);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const lanesEl=document.getElementById("lanes");
+LANES.forEach(l=>{
+  const col=document.createElement("div");
+  col.className="lane "+l.id;
+  col.style.setProperty("--lane",`var(${l.color})`);
+  col.style.setProperty("--lane-bg",`var(${l.bg})`);
+  col.innerHTML=`<div class="lane-title">${l.name}</div>`;
+  N.filter(n=>n.lane===l.id).forEach(n=>{
+    const b=document.createElement("button");
+    b.className="node";b.id="n-"+n.id;b.type="button";b.dataset.id=n.id;
+    b.innerHTML=`${n.ai?'<em class="ai" style="font-style:normal">uses AI</em>':""}<strong>${esc(n.name)}</strong><span>${esc(n.sub)}</span><em class="tag" style="font-style:normal"></em>`;
+    b.addEventListener("click",()=>select(n.id,true));
+    col.appendChild(b);
+  });
+  lanesEl.appendChild(col);
+});
+
+function relChips(ids){
+  return ids.map(id=>{const l=laneOf(id);return `<button type="button" data-go="${id}"><span class="dot" style="background:var(${l.color})"></span>${esc(byId[id].name)}</button>`}).join("");
+}
+function select(id,user){
+  const n=byId[id];
+  const tags={};
+  n.uses.forEach(t=>tags[t]="it uses");
+  n.usedBy.forEach(t=>tags[t]=tags[t]||"uses it");
+  n.reads.forEach(t=>tags[t]="it reads");
+  n.writes.forEach(t=>tags[t]=tags[t]?tags[t]+" + saves":"it saves");
+  n.readBy.forEach(t=>tags[t]="reads it");
+  n.writtenBy.forEach(t=>tags[t]=tags[t]?tags[t]+" + saves it":"saves it");
+  document.querySelectorAll(".node").forEach(el=>{
+    const nid=el.dataset.id;
+    el.classList.toggle("sel",nid===id);
+    el.classList.toggle("rel",!!tags[nid]);
+    el.setAttribute("aria-pressed",nid===id?"true":"false");
+    el.querySelector(".tag").textContent=tags[nid]||"";
+  });
+  const l=laneOf(id);
+  const groups=[
+    ["Uses",n.uses],["Used by",n.usedBy],["Reads",n.reads],["Saves to",n.writes],["Read by",n.readBy],["Saved by",n.writtenBy]
+  ].filter(g=>g[1].length);
+  document.getElementById("panel").innerHTML=`
+    <div class="who"><span class="chip"><span class="dot" style="background:var(${l.color})"></span>${l.name}</span>${n.owner?`<span class="owner">Built by ${OWN[n.owner]}</span>`:""}${n.ai?'<span class="owner">Uses AI</span>':""}</div>
+    <h3>${esc(n.name)}</h3>
+    <p class="desc">${esc(n.desc)}</p>
+    <div class="rels">${groups.map(g=>`<div class="rel-group"><div class="eyebrow">${g[0]}</div><div class="rel-list">${relChips(g[1])}</div></div>`).join("")}</div>
+    <p class="hint">Tap any part on the map, or a name above, to follow the connection.</p>`;
+  document.querySelectorAll("#panel [data-go]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.go,true)));
+  if(user){try{localStorage.setItem("aat-sel",id)}catch(e){}}
+}
+let start="matcher";
+try{const s=localStorage.getItem("aat-sel");if(s&&byId[s])start=s}catch(e){}
+select(start,false);
+
+// journeys
+const J=[
+  {id:"signup",name:"1 · A brand signs up",intro:"One time, about five minutes. We read words, not pictures: it's far cheaper, and the text on a brand's own site usually says enough about its style.",
+   steps:[["founder","Enters the brand's website and Instagram on the sign-up page."],["crawler","Reads the text on those pages: About Us, product descriptions, captions."],["profiler","Asks the AI to write a style profile from that text."],["founder","Checks the profile and edits anything that's off."],["profiles","The profile is saved."],["digest","The first digest goes out right away."]],loop:""},
+  {id:"digest",name:"2 · The digest arrives",intro:"Every day or week, depending on the brand's setting. This is the lead feature for the pitch.",
+   steps:[["scheduler","Wakes up: it's time for this brand's digest."],["matcher","Looks up the brand's profile and finds trends that fit its style."],["digest","Picks 2–4 trends with 3–5 real product examples each, colours named from the fixed list."],["sender","Sends it to email or Slack."],["founder","Taps 👍 or 👎 on each item."],["feedback","The taps are saved."]],loop:"↻ The Matcher reads those taps next time, so every digest fits the brand a little better."},
+  {id:"ask",name:"3 · Ask a question",intro:"Any time. Pre-made answers for the demo questions load in under two seconds; new questions build live.",
+   steps:[["founder","Types a question, e.g. “Which colours are rising in summer dresses under $50?”"],["ask","Checks Saved answers. If it was asked before, the dashboard appears instantly."],["reader","The AI works out the style and what the founder cares about."],["matcher","Pulls matching data, ranked by the brand's weights."],["dashbuilder","The AI picks charts from the fixed set, writes a summary, and styles it."],["dashboard","The dashboard appears chart by chart. Tap a chart to see the real products."]],loop:""}
+];
+const tabs=document.getElementById("tabs");
+J.forEach((j,i)=>{
+  const t=document.createElement("button");
+  t.className="tab";t.type="button";t.role="tab";t.id="t-"+j.id;t.textContent=j.name;
+  t.addEventListener("click",()=>showJ(i,true));
+  tabs.appendChild(t);
+});
+function showJ(i,user){
+  const j=J[i];
+  tabs.querySelectorAll(".tab").forEach((t,k)=>t.setAttribute("aria-selected",k===i?"true":"false"));
+  document.getElementById("jintro").textContent=j.intro;
+  document.getElementById("jloop").textContent=j.loop;
+  document.getElementById("steps").innerHTML=j.steps.map(([id,txt])=>{const l=laneOf(id);
+    return `<li class="step" style="--lane:var(${l.color})"><span class="by"><span class="dot" style="background:var(${l.color})"></span>${esc(byId[id].name)}</span><p>${esc(txt)}</p></li>`}).join("");
+  if(user){try{localStorage.setItem("aat-j",String(i))}catch(e){}}
+}
+let ji=1;try{const s=parseInt(localStorage.getItem("aat-j"),10);if(s>=0&&s<J.length)ji=s}catch(e){}
+showJ(ji,false);
+
+// data table
+const names=ids=>ids.length?ids.map(id=>esc(byId[id].name)).join(", "):"—";
+document.querySelector("#dtable tbody").innerHTML=N.filter(n=>n.lane==="data").map(n=>
+  `<tr><td><span class="dot" style="background:var(--data)"></span>${esc(n.name)}</td><td>${esc(n.desc)}</td><td>${n.id==="curation"?"Blair":names(n.writtenBy)}</td><td>${names(n.readBy)}</td></tr>`).join("");
+
+// owners
+const O=[
+  {k:"Y",pct:"40%",role:"Engine & AI",items:["AI switchboard","Brand profiler","Question reader","Matcher","Dashboard and digest builders"]},
+  {k:"Z",pct:"40%",role:"App, data & delivery",items:["App foundation and database","Crawler and source connections","Every screen","Scheduler and sending by email, Slack, WhatsApp"]},
+  {k:"B",pct:"20%",role:"Fashion sense & evaluation",items:["Style vocabulary and colour list","Which stores and sources to use","Demo brands and questions","Default weights","Grading every profile, digest and dashboard"]}
+];
+document.getElementById("owners").innerHTML=O.map(o=>`<div class="owner-card"><div class="eyebrow">${o.role}</div><div class="pct">${OWN[o.k]} · ${o.pct}</div><ul>${o.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`).join("");
+</script>
+
+</body>
+</html>
