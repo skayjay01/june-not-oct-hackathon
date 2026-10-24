@@ -6,6 +6,7 @@ import type { BrandProfile } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
 import { isSitePage, PASTED_SITE_URL, RESEARCH_PREFIX, researchSources } from "@/lib/engine/brand-research";
 import { pasteSiteText, recrawl, saveProfile } from "./actions";
+import { OwnGallery, SimilarGallery } from "./brand-gallery";
 import { sendTestDigest } from "./digest-actions";
 import { DigestPanel } from "./digest-panel";
 import { PasteSiteText } from "./paste-site-text";
@@ -87,6 +88,9 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
           {brand.website_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
         </a>
       </div>
+      <Suspense fallback={null}>
+        <OwnGallery websiteUrl={brand.website_url} />
+      </Suspense>
 
       {!profile ? (
         <>
@@ -134,6 +138,9 @@ async function Brand({ params }: Pick<PageProps<"/brands/[id]">, "params">) {
           {/* Remount (fresh values) when a re-read finishes, but not on the founder's own save,
               so the "Saved" message survives the refresh. */}
           <ProfileEditor key={brand.crawl_status} profile={profile} vocab={vocab} save={saveProfile.bind(null, id)} />
+          <Suspense fallback={null}>
+            <SimilarGallery styleTags={profile.style_tags} websiteUrl={brand.website_url} />
+          </Suspense>
           <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
             <DigestPanel
               channel={brand.digest_channel}
