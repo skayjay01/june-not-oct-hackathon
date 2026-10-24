@@ -156,7 +156,7 @@ interface Plan {
 /** Which queries each chart can draw, first = default. */
 const CHART_QUERIES: Record<ChartType, QueryName[]> = {
   trend_line: ["interest_over_time"],
-  ranked_bar: ["attribute_growth", "top_examples", "segment_compare"],
+  ranked_bar: ["attribute_growth", "top_examples", "segment_compare", "editorial_signals"],
   image_grid: ["top_examples"],
   big_number: ["item_count"],
   comparison: ["segment_compare"],
@@ -168,6 +168,7 @@ const DEFAULT_CHART: Record<QueryName, ChartType> = {
   top_examples: "image_grid",
   item_count: "big_number",
   segment_compare: "comparison",
+  editorial_signals: "ranked_bar",
 };
 const ATTRIBUTES = ["colors", "silhouette", "material", "pattern", "style_tags"] as const;
 
@@ -179,10 +180,11 @@ Queries:
 - interest_over_time: search interest over time for keywords. Put 1–3 short search phrases in keywords.
 - item_count: how many matching products and stores carry them.
 - segment_compare: compares two segments. Put exactly two ids (categories, style tags, colors, silhouettes, materials or patterns) in keywords.
+- editorial_signals: runway, Lyst and press facts behind the trend, weighted by which houses show it, each linked to its source. Set attribute to narrow it (colors, material or pattern); optional keywords filter by words in the fact. Include it whenever runway/press signals are listed, and always for upcoming-season questions.
 
 Charts and the queries they can show:
 - color_swatches: attribute_growth with attribute colors (use for color questions)
-- ranked_bar: attribute_growth, top_examples or segment_compare
+- ranked_bar: attribute_growth, top_examples, segment_compare or editorial_signals
 - image_grid: top_examples (almost always include one, so answers show real products)
 - big_number: item_count
 - trend_line: interest_over_time
@@ -206,13 +208,14 @@ Data available: ${describeData(items)}`;
   } catch {
     // fall through to the default plan
   }
-  return defaultPlan(question, intent);
+  return defaultPlan(question, intent, items.some((i) => i.evidence));
 }
 
 /** Short census of the candidate pool so the AI doesn't plan widgets with no data. */
 function describeData(items: TrendItem[]): string {
   const products = items.filter((i) => i.type === "product");
-  const keywords = items.filter((i) => i.type === "keyword");
+  const keywords = items.filter((i) => i.type === "keyword" && !i.evidence);
+  const signals = items.filter((i) => i.evidence);
   const top = (vals: (string | undefined)[]) => {
     const n = new Map<string, number>();
     for (const v of vals) if (v) n.set(v, (n.get(v) ?? 0) + 1);
@@ -220,11 +223,12 @@ function describeData(items: TrendItem[]): string {
   };
   return [
     `${products.length} products, ${keywords.length} search keywords.`,
-    `Colors: ${top(products.flatMap((i) => i.attributes.colors ?? []))}.`,
-    `Silhouettes: ${top(products.map((i) => i.attributes.silhouette))}.`,
-    `Materials: ${top(products.map((i) => i.attributes.material))}.`,
-    `Patterns: ${top(products.map((i) => i.attributes.pattern))}.`,
-    `Style tags: ${top(products.flatMap((i) => i.attributes.style_tags ?? []))}.`,
+    `${signals.length} runway/press signals${signals.length ? `, e.g. ${signals.slice(0, 8).map((i) => i.title).join("; ")}` : ""}.`,
+    `Colors: ${top(items.flatMap((i) => i.attributes.colors ?? []))}.`,
+    `Silhouettes: ${top(items.map((i) => i.attributes.silhouette))}.`,
+    `Materials: ${top(items.map((i) => i.attributes.material))}.`,
+    `Patterns: ${top(items.map((i) => i.attributes.pattern))}.`,
+    `Style tags: ${top(items.flatMap((i) => i.attributes.style_tags ?? []))}.`,
     `Keywords: ${keywords.slice(0, 10).map((k) => k.title).join(", ") || "none"}.`,
   ].join("\n");
 }
@@ -263,7 +267,7 @@ export function repairPlan(raw: unknown): Plan {
 const FOCUS_ATTR: Partial<Record<QuestionIntent["focus"], PlannedWidget["attribute"]>> = { color: "colors", silhouette: "silhouette", material: "material", pattern: "pattern" };
 
 /** Used when the AI can't plan: a sensible layout for the question's focus. */
-export function defaultPlan(question: string, intent: QuestionIntent): Plan {
+export function defaultPlan(question: string, intent: QuestionIntent, hasSignals = false): Plan {
   const attr = FOCUS_ATTR[intent.focus] ?? "colors";
   const w = (id: string, chart: ChartType, query: QueryName, attribute: PlannedWidget["attribute"], caption: string, limit = 8): PlannedWidget =>
     ({ id, chart, query, attribute, keywords: [], limit, title: defaultTitle(query, attribute), caption });
@@ -273,6 +277,7 @@ export function defaultPlan(question: string, intent: QuestionIntent): Plan {
       w("w1", attr === "colors" ? "color_swatches" : "ranked_bar", "attribute_growth", attr, `The ${attr === "colors" ? "colors" : attr} with the strongest trend signals for this question.`),
       w("w2", "image_grid", "top_examples", null, "Real products that best match the question and your brand.", 6),
       w("w3", "big_number", "item_count", null, "How many matching products we found, and in how many stores."),
+      ...(hasSignals ? [w("w4", "ranked_bar", "editorial_signals", FOCUS_ATTR[intent.focus] ?? null, "Runway and press signals behind this trend, weighted by which houses show it.")] : []),
     ],
   };
 }
@@ -284,6 +289,7 @@ function defaultTitle(query: QueryName, attribute: PlannedWidget["attribute"]): 
     case "interest_over_time": return "Search interest";
     case "item_count": return "Matching products";
     case "segment_compare": return "Side by side";
+    case "editorial_signals": return "Runway & press signals";
   }
 }
 
@@ -300,7 +306,7 @@ function fillWidget(w: PlannedWidget, items: TrendItem[], ctx: MatchContext, dep
     limit: w.limit,
     ...(w.attribute ? { attribute: w.attribute } : {}),
     ...(w.query === "segment_compare" ? { segments: [w.keywords[0], w.keywords[1]] as [string, string] } : {}),
-    ...(w.query === "interest_over_time" && w.keywords.length ? { keywords: w.keywords } : {}),
+    ...((w.query === "interest_over_time" || w.query === "editorial_signals") && w.keywords.length ? { keywords: w.keywords } : {}),
   };
   return runWidget({ id: w.id, chart: w.chart, query: w.query, params, title: w.title, caption: w.caption || defaultTitle(w.query, w.attribute) }, items, ctx, deps);
 }

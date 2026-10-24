@@ -10,12 +10,13 @@ interface Raw {
   label?: string;
   name?: string;
   cues?: string[];
+  family?: string;
 }
 
 async function readList(file: string, key: string) {
   const p = path.join(process.cwd(), "data", "curation", file);
   const json = JSON.parse(await readFile(p, "utf8")) as Record<string, Raw[]>;
-  return (json[key] ?? []).map((x) => ({ id: x.id, label: x.label ?? x.name ?? x.id, cues: x.cues }));
+  return (json[key] ?? []).map((x) => ({ id: x.id, label: x.label ?? x.name ?? x.id, cues: x.cues, family: x.family }));
 }
 
 let cached: Promise<ProfileVocab> | undefined;

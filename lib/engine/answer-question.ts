@@ -5,6 +5,7 @@ import { ai } from "@/lib/ai";
 import type { BrandProfile, DashboardEvent, DashboardSpec, Feedback, TrendItem, WeightDimension, Weights } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
 import { DEFAULT_WEIGHTS } from "./build-digest";
+import { editorialItems } from "./editorial";
 import { answerQuestion as answerWith, rerankSpec, type BrandContext, type DashboardDeps } from "./dashboard-builder";
 import { loadCandidates, loadItemsByIds, type TrendDb } from "./trend-store";
 import { loadVocab } from "./vocab";
@@ -36,13 +37,18 @@ export function answerQuestion(brandId: string, question: string, previous?: Das
 export async function rerankDashboard(brandId: string, spec: DashboardSpec, weights: Pick<Weights, WeightDimension>): Promise<DashboardSpec> {
   const itemsP = loadCandidates(trendDb(), brandId, spec.intent ?? null);
   const [brand, display] = await Promise.all([loadBrand(brandId), displayOptions()]);
-  const items = await itemsP;
+  const items = [...(await itemsP), ...editorialItems()];
   return rerankSpec(spec, items, { brandId, profile: brand.profile, weights, feedback: brand.feedback }, display);
 }
 
 /** Engine contract: getEvidence — the real records behind a chart element (US-009); FR-8 enforced in trend-store. */
-export function getEvidence(brandId: string, itemIds: number[]): Promise<TrendItem[]> {
-  return loadItemsByIds(trendDb(), brandId, itemIds);
+export async function getEvidence(brandId: string, itemIds: number[]): Promise<TrendItem[]> {
+  // negative ids are Blair's editorial signals (public, in memory); the rest come from trend_items
+  const editorial = new Map(editorialItems().map((i) => [i.id, i]));
+  const fromDb = await loadItemsByIds(trendDb(), brandId, itemIds.filter((id) => id > 0));
+  const byId = new Map<number, TrendItem>([...fromDb.map((i): [number, TrendItem] => [i.id, i])]);
+  for (const id of itemIds) if (id < 0 && editorial.has(id)) byId.set(id, editorial.get(id)!);
+  return [...new Set(itemIds)].map((id) => byId.get(id)).filter((i): i is TrendItem => !!i);
 }
 
 /** The real dependencies: switchboard for AI, Supabase for data, saved_answers as the cache. */
@@ -51,7 +57,8 @@ async function serverDeps(brandId: string): Promise<DashboardDeps> {
     ...(await displayOptions()),
     ask: async (c) => (await ai().generateJSON({ ...c, schema: c.schema as Readonly<Record<string, unknown>> })).value,
     loadBrand: () => loadBrand(brandId),
-    loadItems: (_brandId, intent) => loadCandidates(trendDb(), brandId, intent),
+    // the trend library plus Blair's runway/press signals (public, weighted by house)
+    loadItems: async (_brandId, intent) => [...(await loadCandidates(trendDb(), brandId, intent)), ...editorialItems()],
     cache: {
       get: async (hash) => {
         const { data } = await db().from("saved_answers").select("spec").eq("question_hash", hash).maybeSingle();

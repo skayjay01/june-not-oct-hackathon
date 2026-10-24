@@ -21,6 +21,7 @@ interface VocabEntry {
   id: string;
   label: string;
   cues?: string[];
+  family?: string;
 }
 export interface ProfileVocab {
   styleTags: VocabEntry[];
