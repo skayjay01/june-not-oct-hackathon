@@ -4,9 +4,13 @@ import { collectBrandPages } from "./brand-site";
 import { recordRun, sourceEnabled } from "./registry";
 
 // Contract function (tasks/build-plan.md): crawlBrand(brandId) saves the brand's page text
-// into crawl_pages for the engine's buildProfile(brandId).
+// into crawl_pages for the engine's buildProfile(brandId). Pass { setStatus: false } when a
+// caller (runOnboarding) owns brands.crawl_status for a longer pipeline.
 
-export async function crawlBrand(brandId: string) {
+export async function crawlBrand(brandId: string, { setStatus = true }: { setStatus?: boolean } = {}) {
+  const status = async (crawl_status: string) => {
+    if (setStatus) await db().from("brands").update({ crawl_status }).eq("id", brandId);
+  };
   const { data: brand, error } = await db()
     .from("brands")
     .select("id, website_url, extra_urls")
@@ -15,11 +19,11 @@ export async function crawlBrand(brandId: string) {
   if (error) throw error;
 
   if (!(await sourceEnabled("brand_site"))) {
-    await db().from("brands").update({ crawl_status: "failed" }).eq("id", brandId);
+    await status("failed");
     return { saved: 0, skipped: [{ url: brand.website_url, reason: "brand_site source is switched off" }] };
   }
 
-  await db().from("brands").update({ crawl_status: "running" }).eq("id", brandId);
+  await status("running");
   try {
     const { pages, skipped } = await collectBrandPages(brand.website_url, brand.extra_urls ?? []);
     if (pages.length) {
@@ -31,12 +35,11 @@ export async function crawlBrand(brandId: string) {
         );
       if (upsertError) throw upsertError;
     }
-    const status = pages.length ? "done" : "failed";
-    await db().from("brands").update({ crawl_status: status }).eq("id", brandId);
+    await status(pages.length ? "done" : "failed");
     await recordRun("brand_site", pages.length ? undefined : "no pages collected");
     return { saved: pages.length, skipped };
   } catch (e) {
-    await db().from("brands").update({ crawl_status: "failed" }).eq("id", brandId);
+    await status("failed");
     await recordRun("brand_site", e instanceof Error ? e.message : String(e));
     throw e;
   }
