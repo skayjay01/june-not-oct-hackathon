@@ -229,7 +229,8 @@ function describeData(items: TrendItem[]): string {
     `Materials: ${top(items.map((i) => i.attributes.material))}.`,
     `Patterns: ${top(items.map((i) => i.attributes.pattern))}.`,
     `Style tags: ${top(items.flatMap((i) => i.attributes.style_tags ?? []))}.`,
-    `Keywords: ${keywords.slice(0, 10).map((k) => k.title).join(", ") || "none"}.`,
+    // every keyword (Google Trends + Wikipedia readership), so the AI can ask for a trend line on the one the question names
+    `Keywords: ${[...new Set(keywords.map((k) => k.title))].slice(0, 60).join(", ") || "none"}.`,
   ].join("\n");
 }
 
