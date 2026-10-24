@@ -18,8 +18,9 @@ Owner: Blair (Workstream C). Written 2026-10-24. Score every demo output in [`sc
 Any one of these scores the whole output 1, whatever else it gets right:
 
 - An invented product, image, price or color name (PRD FR-3, FR-4)
-- A chart or digest item with no source, or a source link that doesn't open
-- Data collected from a site our rules exclude (Zara, SHEIN, F-Trend, Première Vision pages, any `public_product_list = no` store)
+- A chart or digest item with no source, or a source link that doesn't open in a browser. A source is a link, or a named team observation marked as such (`reliability = blair_observation`)
+- Data crawled or scraped from a site our rules exclude: Zara, SHEIN, Cider, Fashion Nova, F-Trend, Première Vision pages, or any store with `public_product_list = no`. Hand-entered, cited observations are allowed (e.g. Blair's Zara check). Press coverage of Première Vision or F-Trend is fine; content copied from their pages is not
+- Instagram data gathered outside the official API (PRD §7.2)
 - One brand's licensed data shown to another brand (FR-8)
 
 ## Brand profiles (A2)
