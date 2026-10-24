@@ -3,7 +3,7 @@
 
 import { APICallError } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
-import type { Account } from "./accounts";
+import { loadAccountConfigs, toAccount, type Account } from "./accounts";
 import { AllAccountsFailedError, createSwitchboard, type LatencyEntry } from "./switchboard";
 
 const schema = {
@@ -112,6 +112,34 @@ await test("identical calls are served from cache", async () => {
   await sb.generateJSON({ ...base, noCache: false });
   const r = await sb.generateJSON({ ...base, noCache: false });
   expect(r.cached && a.calls() === 1, `cached=${r.cached} calls=${a.calls()}`);
+});
+
+await test("subscription tokens load first; key-based fallbacks only when set", async () => {
+  const cfg = loadAccountConfigs({ CLAUDE_CODE_OAUTH_TOKEN: "sub-a", CLAUDE_CODE_OAUTH_TOKEN_2: "sub-b", OPENAI_API_KEY: "k" });
+  expect(JSON.stringify(cfg.map((c) => c.id)) === JSON.stringify(["claude-sub-1", "claude-sub-2", "openai-key-1"]), `order ${cfg.map((c) => c.id)}`);
+  expect(cfg[0].authToken === "sub-a" && !cfg[0].apiKey && cfg[0].model === "claude-haiku-4-5", "subscription account wrong");
+  expect(loadAccountConfigs({}).length === 0, "no env should mean no accounts");
+});
+
+await test("subscription account sends a Bearer sign-in with the oauth beta, not an API key", async () => {
+  let headers: Headers | undefined;
+  let body: { model?: string } = {};
+  const fakeFetch = (async (_url: unknown, init?: RequestInit) => {
+    headers = new Headers(init?.headers);
+    body = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify({
+      id: "msg_1", type: "message", role: "assistant", model: body.model, stop_reason: "end_turn", stop_sequence: null,
+      content: [{ type: "text", text: '{"color":"oatmeal"}' }], usage: { input_tokens: 5, output_tokens: 3 },
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  }) as typeof fetch;
+  const [cfg] = loadAccountConfigs({ CLAUDE_CODE_OAUTH_TOKEN: "sub-token" });
+  const sb = createSwitchboard({ accounts: [toAccount(cfg, fakeFetch)] });
+  const r = await sb.generateJSON<{ color: string }>(base);
+  expect(r.value.color === "oatmeal", `value ${JSON.stringify(r.value)}`);
+  expect(headers?.get("authorization") === "Bearer sub-token", `authorization ${headers?.get("authorization")}`);
+  expect(!headers?.get("x-api-key"), "x-api-key must not be sent for a subscription");
+  expect((headers?.get("anthropic-beta") ?? "").includes("oauth-2025-04-20"), `beta ${headers?.get("anthropic-beta")}`);
+  expect(body.model === "claude-haiku-4-5", `model ${body.model}`);
 });
 
 process.exit(failures ? 1 : 0);
