@@ -25,6 +25,8 @@ export type AskJson = (req: {
 export interface VocabEntry {
   id: string;
   label: string;
+  /** colors only: the color family, e.g. "green" */
+  family?: string;
 }
 
 /** The ids the reader may return, with labels so users' wording can be mapped back to ids. */
@@ -55,8 +57,8 @@ export function loadQuestionVocab(root = process.cwd()): QuestionVocab {
     const path = join(root, "data", "curation", file);
     if (!existsSync(path)) return [];
     // colors.json calls the display text "name"; the other files call it "label"
-    const rows = JSON.parse(readFileSync(path, "utf8"))[key] as { id: string; label?: string; name?: string }[];
-    return rows.map((r) => ({ id: r.id, label: r.label ?? r.name ?? r.id }));
+    const rows = JSON.parse(readFileSync(path, "utf8"))[key] as { id: string; label?: string; name?: string; family?: string }[];
+    return rows.map((r) => ({ id: r.id, label: r.label ?? r.name ?? r.id, ...(r.family ? { family: r.family } : {}) }));
   };
   return {
     styleTags: load("style-tags.json", "tags"),
@@ -106,6 +108,9 @@ Set in_scope to false only when the question is not about fashion trends (weathe
 Use only these ids. Leave a list empty if the question names none.
 style_tags: ${list(v.styleTags)}
 categories: ${list(v.categories)}
+colors: ${v.colors.map((c) => `${c.id} (${c.label}${c.family ? `, ${c.family}` : ""})`).join(", ") || "(none loaded)"}
+
+colors lists the colors the question names. For a family word ("green", "orange"), list every id in that family. Leave it empty when no color is named.
 
 price_min and price_max are in US dollars; null when the question gives no price. "under $50" means price_max 50.
 focus is what the user asks about: color, silhouette, material, pattern, product, keyword (search terms), or general.
@@ -137,6 +142,7 @@ export function normalizeIntent(raw: unknown, opts: Pick<ReadOptions, "vocab" | 
     suggestion: null,
     style_tags: toIds(asStrings(r.style_tags), vocab.styleTags),
     categories: toIds(asStrings(r.categories), vocab.categories),
+    colors: toIds(asStrings(r.colors), vocab.colors),
     price_min: priceMin,
     price_max: priceMax,
     focus,
@@ -152,6 +158,7 @@ export function checkIntent(i: QuestionIntent, vocab: QuestionVocab): string[] {
     ids.filter((id) => !entries.some((e) => e.id === id)).forEach((id) => errs.push(`${field}: unknown id "${id}"`));
   known(i.style_tags, vocab.styleTags, "style_tags");
   known(i.categories, vocab.categories, "categories");
+  known(i.colors ?? [], vocab.colors, "colors");
   if (i.price_min !== null && i.price_max !== null && i.price_min > i.price_max) errs.push("price_min above price_max");
   if (i.time_window_days < MIN_WINDOW_DAYS || i.time_window_days > MAX_WINDOW_DAYS) errs.push("time_window_days out of range");
   if (i.in_scope === !!i.suggestion) errs.push(i.in_scope ? "in-scope intent has a suggestion" : "out-of-scope intent has no suggestion");
@@ -164,6 +171,7 @@ function outOfScope(opts: Pick<ReadOptions, "vocab" | "profile">, suggestion: st
     suggestion: suggestion ?? defaultSuggestion(opts),
     style_tags: [],
     categories: [],
+    colors: [],
     price_min: null,
     price_max: null,
     focus: "general",
@@ -235,7 +243,7 @@ export function readByKeywords(q: string, opts: Pick<ReadOptions, "vocab" | "pro
     entries.filter((e) => wordIn(q, e.label) || wordIn(q, e.id.replace(/-/g, " "))).map((e) => e.id);
   const styleTags = unique(mentioned(vocab.styleTags));
   const categories = unique(mentioned(vocab.categories));
-  const colors = mentioned(vocab.colors);
+  const colors = namedColors(q, vocab.colors);
 
   const fashion = FASHION_WORDS.test(q) || COLOR_WORDS.test(q) || styleTags.length > 0 || categories.length > 0 || colors.length > 0;
   if (!fashion || UNSUPPORTED.test(q)) return outOfScope(opts, null);
@@ -246,6 +254,7 @@ export function readByKeywords(q: string, opts: Pick<ReadOptions, "vocab" | "pro
     suggestion: null,
     style_tags: styleTags,
     categories,
+    colors,
     price_min: min,
     price_max: max,
     focus: FOCUS_WORDS.find(([, re]) => re.test(q))?.[0] ?? (colors.length ? "color" : "general"),
@@ -268,6 +277,7 @@ export function refineByKeywords(q: string, prev: QuestionIntent, opts: Pick<Rea
     ...prev,
     style_tags: styleTags.length ? styleTags : prev.style_tags,
     categories: categories.length ? categories : prev.categories,
+    colors: namedColors(q, vocab.colors).length ? namedColors(q, vocab.colors) : (prev.colors ?? []),
     // a new price bound replaces the old range; no price in the follow-up keeps it
     price_min: min !== null || max !== null ? min : prev.price_min,
     price_max: min !== null || max !== null ? max : prev.price_max,
@@ -275,6 +285,14 @@ export function refineByKeywords(q: string, prev: QuestionIntent, opts: Pick<Rea
     emphasis: unique([...prev.emphasis, ...EMPHASIS_WORDS.filter(([, re]) => re.test(q)).map(([d]) => d)]),
     time_window_days: explicitWindow(q) ?? prev.time_window_days,
   };
+}
+
+/** Colors named outright ("butter yellow"), plus every shade of a family word ("green") whose shades weren't named. */
+function namedColors(q: string, colors: VocabEntry[]): string[] {
+  const named = colors.filter((c) => wordIn(q, c.label) || wordIn(q, c.id.replace(/-/g, " ")));
+  const namedFamilies = new Set(named.map((c) => c.family));
+  const families = new Set(colors.map((c) => c.family).filter((f): f is string => !!f && !namedFamilies.has(f) && wordIn(q, f)));
+  return unique([...named.map((c) => c.id), ...colors.filter((c) => c.family && families.has(c.family)).map((c) => c.id)]);
 }
 
 function wordIn(text: string, phrase: string): boolean {

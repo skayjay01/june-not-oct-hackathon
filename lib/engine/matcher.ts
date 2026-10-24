@@ -84,6 +84,7 @@ export function rankItems(items: TrendItem[], ctx: RankContext): RankedItem[] {
   const votes = [...(ctx.votes ?? []), ...resolveFeedback(ctx.feedback ?? [], items)];
   const affinity = attributeAffinity(votes);
   const itemVotes = new Map(votes.map((v) => [v.item.id, v.vote]));
+  const maxHouse = Math.max(1, ...items.map(houseWeight));
 
   return items
     .map((item) => {
@@ -91,11 +92,13 @@ export function rankItems(items: TrendItem[], ctx: RankContext): RankedItem[] {
         price_fit: priceFit(item.price, prefs.priceMin, prefs.priceMax),
         social_buzz: interest.get(item.id) ?? 0,
         growth_speed: growth.get(item.id) ?? 0,
-        competitor_adoption: stores.get(item.id) ?? 0,
+        competitor_adoption: stores.get(item.id) ?? item.metrics.adoption ?? 0,
         style_fit: styleFit(item, prefs),
       };
       let score = WEIGHT_DIMENSIONS.reduce((s, d) => s + (w[d] / 100) * dims[d], 0);
       score *= 1 + VOTE_WEIGHT * (itemVotes.get(item.id) ?? 0) + AFFINITY_WEIGHT * Math.tanh(affinityOf(item, affinity));
+      // Blair's house weighting multiplies the score; dividing by the largest weight keeps 0–1 without changing the order
+      score *= houseWeight(item) / maxHouse;
       return { item, score: clamp01(score), dims };
     })
     .sort((a, b) => b.score - a.score || a.item.id - b.item.id);
@@ -113,7 +116,7 @@ interface Prefs {
 function preferences({ profile, intent }: RankContext): Prefs {
   return {
     styleTags: new Set([...(intent?.style_tags ?? []), ...(profile?.style_tags ?? [])]),
-    colors: new Set(profile?.colors ?? []),
+    colors: new Set([...(intent?.colors ?? []), ...(profile?.colors ?? [])]),
     categories: new Set(intent?.categories.length ? intent.categories : (profile?.categories ?? [])),
     priceMin: intent?.price_min ?? profile?.price_min ?? null,
     priceMax: intent?.price_max ?? profile?.price_max ?? null,
@@ -201,6 +204,9 @@ export function itemIdFromFeedbackKey(key: string): number | null {
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
+/** data/curation/brand-weights.json multiplier carried on editorial signals; 1 for everything else. */
+const houseWeight = (i: TrendItem) => (typeof i.metrics.house_weight === "number" && i.metrics.house_weight > 0 ? i.metrics.house_weight : 1);
+
 // ---------- predefined queries (FR-13) ----------
 
 export interface QueryResult {
@@ -242,6 +248,9 @@ export function runQuery(name: QueryName, params: QueryParams, items: TrendItem[
       const ranked = rankItems(pool.filter((i) => matchesStyle(i, params.style_tags)), ctx);
       const groups = new Map<string, RankedItem[]>();
       for (const r of ranked) for (const v of attributeValues(r.item, attr)) groups.set(v, [...(groups.get(v) ?? []), r]);
+      // a question that names colors ("green or orange?") compares those colors, when any have data
+      const asked = attr === "colors" ? new Set(ctx.intent?.colors ?? []) : new Set<string>();
+      if ([...groups.keys()].some((v) => asked.has(v))) for (const v of [...groups.keys()]) if (!asked.has(v)) groups.delete(v);
       // a value's score: mean of its best three items, so one strong item can't carry a thin group alone
       const scored = [...groups].map(([value, rs]) => {
         const top = rs.slice(0, 3);
@@ -294,6 +303,19 @@ export function runQuery(name: QueryName, params: QueryParams, items: TrendItem[
         return { label: label(seg), value: Math.round(avg * 100), item_ids: rankItems(members, ctx).slice(0, 5).map((r) => r.item.id) };
       });
       return done(rows, used, "percent");
+    }
+
+    case "editorial_signals": {
+      // runway / Lyst / press facts, ranked with the house weighting; narrowed to the attribute asked about when any match
+      const facts = pool.filter((i) => i.evidence && matchesKeywords(i, params.keywords) && matchesStyle(i, params.style_tags));
+      const wantType = params.attribute ? ({ colors: "color", material: "fabric", pattern: "pattern" } as const)[params.attribute as "colors"] : undefined;
+      const focused = wantType && facts.some((i) => i.type === wantType) ? facts.filter((i) => i.type === wantType) : facts;
+      const ranked = rankItems(focused, ctx).slice(0, limit);
+      return done(
+        ranked.map(({ item, score }) => ({ label: item.title ?? item.source_item_id, value: Math.round(score * 100), link: item.link ?? undefined, item_ids: [item.id] })),
+        ranked.map((r) => r.item),
+        "index",
+      );
     }
   }
 }

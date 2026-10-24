@@ -10,19 +10,20 @@ const numOrNull = { type: ["number", "null"] } as const;
 const strArr = { type: "array", items: str } as const;
 
 export const CHART_TYPES = ["trend_line", "ranked_bar", "image_grid", "big_number", "comparison", "color_swatches"] as const;
-export const QUERY_NAMES = ["attribute_growth", "interest_over_time", "top_examples", "item_count", "segment_compare"] as const;
+export const QUERY_NAMES = ["attribute_growth", "interest_over_time", "top_examples", "item_count", "segment_compare", "editorial_signals"] as const;
 export const FOCUS = ["color", "silhouette", "material", "pattern", "product", "keyword", "general"] as const;
 
 /** Question reader output → QuestionIntent */
 export const questionIntentSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["in_scope", "suggestion", "style_tags", "categories", "price_min", "price_max", "focus", "emphasis", "time_window_days"],
+  required: ["in_scope", "suggestion", "style_tags", "categories", "colors", "price_min", "price_max", "focus", "emphasis", "time_window_days"],
   properties: {
     in_scope: { type: "boolean" },
     suggestion: strOrNull,
     style_tags: strArr,
     categories: strArr,
+    colors: strArr,
     price_min: numOrNull,
     price_max: numOrNull,
     focus: { type: "string", enum: FOCUS },

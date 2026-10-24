@@ -50,6 +50,10 @@ export const DEMO_BRANDS: DemoBrand[] = [
     name: "Massimo Dutti", website_url: "https://www.massimodutti.com", crawlable: false, preset: "price-sensitive",
     seed: { style_tags: ["quiet-luxury", "tailored", "minimalist"], ...TIER["mid-premium"], summary: "Inditex's premium line: polished, understated tailoring and quiet-luxury basics." },
   },
+  {
+    name: "COS", website_url: "https://www.cos.com", crawlable: false, preset: "price-sensitive",
+    seed: { style_tags: ["minimalist", "quiet-luxury", "tailored"], ...TIER["mid-premium"], summary: "H&M Group's design-led line: modern minimalist wardrobe staples that echo the houses' jacket, cardigan and collar shapes." },
+  },
 ];
 
 export const DEMO_QUESTIONS: DemoQuestion[] = [

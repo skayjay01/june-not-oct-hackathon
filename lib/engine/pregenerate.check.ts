@@ -23,9 +23,16 @@ const unknownTags = DEMO_BRANDS.flatMap((b) => b.seed.style_tags).filter((t) => 
 expect("plan: seed style tags exist in style-tags.json", unknownTags.length === 0, unknownTags.join(", "));
 expect("plan: 3–5 style tags and a sane price range per brand", DEMO_BRANDS.every((b) => b.seed.style_tags.length >= 3 && b.seed.style_tags.length <= 5 && b.seed.price_min < b.seed.price_max));
 if (existsSync("data/curation/presets.json")) {
-  const presets = JSON.parse(readFileSync("data/curation/presets.json", "utf8")).presets as { id: string; demo_brands?: string[] }[];
-  const mismatched = DEMO_BRANDS.filter((b) => !presets.find((p) => p.id === b.preset)?.demo_brands?.includes(b.name));
-  expect("plan: each brand's preset matches presets.json", mismatched.length === 0, mismatched.map((b) => b.name).join(", "));
+  // demo-set.md is the authority: each brand's table row names its preset by label
+  const presets = JSON.parse(readFileSync("data/curation/presets.json", "utf8")).presets as { id: string; label: string }[];
+  const rowOf = (name: string) => demoSet.split("\n").find((l) => l.startsWith(`| ${name} |`)) ?? "";
+  const mismatched = DEMO_BRANDS.filter((b) => {
+    const label = presets.find((p) => p.id === b.preset)?.label;
+    return !label || !rowOf(b.name).includes(label);
+  });
+  expect("plan: each brand's preset matches its demo-set.md row", mismatched.length === 0, mismatched.map((b) => `${b.name} (${b.preset}): ${rowOf(b.name)}`).join("; "));
+  const missing = demoSet.split("\n").filter((l) => /^\| [^|-][^|]* \|/.test(l) && !/^\| (Brand|#) \|/.test(l)).map((l) => l.split("|")[1].trim()).filter((n) => !DEMO_BRANDS.some((b) => b.name === n));
+  expect("plan: every demo-set.md brand is in DEMO_BRANDS", missing.length === 0, missing.join(", "));
 }
 
 // 2. A run with fakes: one site can't be crawled, one digest fails, one question is off-topic.

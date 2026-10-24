@@ -35,6 +35,10 @@ export interface TrendMetrics {
   store_count?: number;
   /** dated points for trend lines, e.g. weekly Google Trends interest; oldest first */
   series?: { date: string; value: number }[];
+  /** how much the houses behind this signal count (data/curation/brand-weights.json); 1 = neutral, up to 3 */
+  house_weight?: number;
+  /** 0–1: how far the trend has spread to other brands (data/curation/trickle-down.csv) */
+  adoption?: number;
 }
 
 /** One row of `trend_items`. brand_id null = public data; set = that brand's licensed data only (FR-8). */
@@ -54,6 +58,8 @@ export interface TrendItem {
   metrics: TrendMetrics;
   published_at: string | null; // ISO timestamp
   collected_at: string; // ISO timestamp
+  /** set on editorial signals (source "editorial", negative id): where the fact comes from */
+  evidence?: { source_name: string; brands: string[]; reliability: string; period: string; kind: string };
 }
 
 // ---------- brands ----------
@@ -88,6 +94,8 @@ export interface QuestionIntent {
   suggestion: string | null;
   style_tags: StyleTagId[];
   categories: CategoryId[];
+  /** colors the question names; a family word ("green") means that family's ids */
+  colors?: ColorId[];
   price_min: number | null;
   price_max: number | null;
   /** which aspect the user is asking about */
@@ -108,7 +116,8 @@ export type QueryName =
   | "interest_over_time" // search interest for keywords over the window
   | "top_examples" // best-matching real items for the intent
   | "item_count" // how many matching items / stores
-  | "segment_compare"; // the same metric across two segments
+  | "segment_compare" // the same metric across two segments
+  | "editorial_signals"; // runway, Lyst and press facts behind the trend, weighted by house
 
 export interface QueryParams {
   attribute?: "colors" | "silhouette" | "material" | "pattern" | "style_tags";
