@@ -52,10 +52,10 @@ async function similarPictures(styleTags: string[], ownHost: string): Promise<Pi
   const perStore = new Map<string, number>();
   const pics: Pic[] = [];
   for (const r of data ?? []) {
-    const store = r.source_item_id.split(":")[0];
+    const store = r.source_item_id.split(":")[0].replace(/^www\./, "");
     if (store === ownHost || (perStore.get(store) ?? 0) >= 2) continue;
     perStore.set(store, (perStore.get(store) ?? 0) + 1);
-    pics.push({ src: r.image_url!, alt: r.title ?? "", link: r.link, caption: store.replace(/^www\./, "") });
+    pics.push({ src: r.image_url!, alt: r.title ?? "", link: r.link, caption: store });
     if (pics.length === SIMILAR) break;
   }
   return pics;
@@ -82,7 +82,7 @@ export async function OwnGallery({ websiteUrl }: { websiteUrl: string }) {
 }
 
 export async function SimilarGallery({ styleTags, websiteUrl }: { styleTags: string[]; websiteUrl: string }) {
-  const pics = await similarPictures(styleTags, new URL(websiteUrl).hostname);
+  const pics = await similarPictures(styleTags, new URL(websiteUrl).hostname.replace(/^www\./, ""));
   if (!pics.length) return null;
   return (
     <div className="flex flex-col gap-2">
