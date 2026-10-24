@@ -131,3 +131,24 @@ export function LicensedSource({
     </li>
   );
 }
+
+export function DeleteBrand({ name, remove }: { name: string; remove: (prev: Result, form: FormData) => Promise<Result> }) {
+  const [state, action, pending] = useActionState(remove, { ok: true, message: "" });
+  return (
+    <form action={action} className="flex flex-col gap-3">
+      <Field label={`Type “${name}” to confirm`} htmlFor="confirm">
+        <input id="confirm" name="confirm" autoComplete="off" className={inputClass} />
+      </Field>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          disabled={pending}
+          className="inline-flex h-10 items-center rounded-lg bg-red-700 px-4 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
+        >
+          {pending ? "Deleting…" : "Delete this brand"}
+        </button>
+        <Status r={state} />
+      </div>
+    </form>
+  );
+}

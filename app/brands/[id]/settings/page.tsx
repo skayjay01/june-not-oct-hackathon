@@ -8,8 +8,8 @@ import { DEFAULT_WEIGHTS } from "@/lib/engine/build-digest";
 import { LICENSED_SOURCES, licensedCounts } from "@/lib/sources/licensed";
 import type { WeightValues } from "@/components/weights-editor";
 import { loadPresets } from "@/app/ask/data";
-import { disconnect, saveDelivery, saveWeights, uploadLicensed } from "./actions";
-import { DeliveryForm, LicensedSource, WeightsForm } from "./forms";
+import { deleteBrand, disconnect, saveDelivery, saveWeights, uploadLicensed } from "./actions";
+import { DeleteBrand, DeliveryForm, LicensedSource, WeightsForm } from "./forms";
 
 export const metadata = { title: "Settings · Ask-a-Trend" };
 
@@ -86,6 +86,16 @@ async function Settings({ params }: Pick<PageProps<"/brands/[id]/settings">, "pa
             />
           ))}
         </ul>
+      </section>
+
+      <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <div>
+          <h2 className="text-xl font-semibold text-red-700 dark:text-red-400">Delete brand</h2>
+          <p className="text-sm text-zinc-500">
+            Removes the brand with its profile, digests, feedback, saved answers and uploaded licensed data. This can&apos;t be undone.
+          </p>
+        </div>
+        <DeleteBrand name={brand.name} remove={deleteBrand.bind(null, id)} />
       </section>
     </>
   );
