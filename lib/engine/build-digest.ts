@@ -6,7 +6,7 @@ import { baselineRank, buildDigestFrom, type RankFn, type RawDigest } from "./di
 import { loadVocab } from "./vocab";
 
 /** Used until the brand saves its own weights (US-007). */
-const DEFAULT_WEIGHTS = { preset: null, price_fit: 20, social_buzz: 20, growth_speed: 25, competitor_adoption: 15, style_fit: 20 } as const;
+export const DEFAULT_WEIGHTS = { preset: null, price_fit: 20, social_buzz: 20, growth_speed: 25, competitor_adoption: 15, style_fit: 20 } as const;
 
 /**
  * Engine contract: buildDigest(brandId). Saves the digest to `digests` and returns it with `id`
