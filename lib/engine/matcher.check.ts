@@ -104,17 +104,16 @@ expect("fixtures: sample items rank", rankItems(filterItems(sampleTrendItems, fi
 
 // 7. loadCandidates builds the right query and normalizes rows.
 const calls: string[] = [];
-type Q = ReturnType<TrendDb["from"]>;
+type Q = ReturnType<ReturnType<TrendDb["from"]>["select"]>;
 const result = Promise.resolve({ data: [{ ...items[0], price: "22.00", metrics: null }] as unknown[], error: null });
 const fakeQuery: Q = {
-  select: (c) => (calls.push(`select ${c}`), fakeQuery),
   or: (f) => (calls.push(`or ${f}`), fakeQuery),
   gte: (c, v) => (calls.push(`gte ${c} ${v.slice(0, 10)}`), fakeQuery),
   order: () => fakeQuery,
   limit: () => fakeQuery,
   then: (ok, fail) => result.then(ok, fail),
 };
-const db: TrendDb = { from: () => fakeQuery };
+const db: TrendDb = { from: () => ({ select: (c) => (calls.push(`select ${c}`), fakeQuery) }) };
 const main = async () => {
   const rows = await loadCandidates(db, DEMO_BRAND_ID, { time_window_days: 30 }, NOW);
   expect("loadCandidates: public + own brand only", calls.includes(`or brand_id.is.null,brand_id.eq.${DEMO_BRAND_ID}`), calls.join(" | "));
