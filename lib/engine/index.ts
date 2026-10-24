@@ -3,6 +3,7 @@ import type { Engine } from "@/lib/contracts";
 import { answerQuestion, getEvidence, rerankDashboard } from "./answer-question";
 import { buildDigest } from "./build-digest";
 import { buildProfile } from "./build-profile";
+import { findBrand } from "./find-brand";
 import { rankItems } from "./matcher";
 
 /**
@@ -17,4 +18,5 @@ export const engine: Engine = {
   buildDigest: (brandId) => buildDigest(brandId, { rank: rankItems }),
   rerankDashboard,
   getEvidence,
+  findBrand,
 };

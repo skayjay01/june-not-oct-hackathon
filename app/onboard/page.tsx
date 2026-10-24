@@ -15,8 +15,8 @@ export default function OnboardPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">Add your brand</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Give us your website and we&apos;ll write a profile of your style in a couple of minutes. You can edit it before
-          anything is sent.
+          Tell us your brand name. We&apos;ll find your website and social accounts, then write a profile of your style in a
+          couple of minutes. You can edit it before anything is sent.
         </p>
       </div>
       <OnboardForm />
