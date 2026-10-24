@@ -132,6 +132,64 @@ export function LicensedSource({
   );
 }
 
+export function KeySource({
+  name,
+  help,
+  count,
+  connection,
+  connect,
+  refreshNow,
+  disconnect,
+}: {
+  name: string;
+  help: string;
+  count: number;
+  connection: { key_hint: string | null; last_synced_at: string | null; last_error: string | null } | null;
+  connect: (prev: Result, form: FormData) => Promise<Result>;
+  refreshNow: () => Promise<Result>;
+  disconnect: () => Promise<void>;
+}) {
+  const [state, action, pending] = useActionState(connect, { ok: true, message: "" });
+  const [refreshed, setRefreshed] = useState<Result | null>(null);
+  const [refreshing, start] = useTransition();
+  const synced = connection?.last_synced_at ? new Date(connection.last_synced_at).toLocaleString() : null;
+  return (
+    <li className="flex flex-col gap-2 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-medium">{name}</span>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs ${connection ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
+          {connection ? `Connected (key …${connection.key_hint}) · ${count.toLocaleString()} items` : "Not connected"}
+        </span>
+      </div>
+      {connection ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="button" variant="secondary" pending={refreshing} onClick={() => start(async () => setRefreshed(await refreshNow()))}>
+            {refreshing ? "Refreshing…" : "Refresh now"}
+          </Button>
+          <span className="text-xs text-zinc-500">{synced ? `Last refreshed ${synced}. Refreshes again before each digest.` : "Not refreshed yet."}</span>
+        </div>
+      ) : (
+        <form action={action} className="flex flex-wrap items-center gap-2">
+          <input name="api_key" type="password" autoComplete="off" placeholder="pplx-…" aria-label={`${name} API key`} className={`${inputClass} max-w-xs`} />
+          <Button type="submit" variant="secondary" pending={pending}>
+            {pending ? "Checking key…" : "Connect"}
+          </Button>
+        </form>
+      )}
+      <Status r={refreshed ?? state} />
+      {connection?.last_error && !refreshed && !state.message && <p className="text-sm text-red-700 dark:text-red-400">Last refresh failed: {connection.last_error}</p>}
+      <p className="text-xs text-zinc-500">{help}</p>
+      {connection && (
+        <form action={disconnect}>
+          <button type="submit" className="text-sm text-red-700 underline-offset-2 hover:underline dark:text-red-400">
+            Disconnect, forget the key and delete this data
+          </button>
+        </form>
+      )}
+    </li>
+  );
+}
+
 export function DeleteBrand({ name, remove }: { name: string; remove: (prev: Result, form: FormData) => Promise<Result> }) {
   const [state, action, pending] = useActionState(remove, { ok: true, message: "" });
   return (

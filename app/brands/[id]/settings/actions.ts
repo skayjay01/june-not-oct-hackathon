@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { checkWeights, WEIGHT_DIMENSIONS, type Weights } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
-import { disconnectLicensed, importLicensedCsv, LICENSED_SOURCES, type LicensedKey } from "@/lib/sources/licensed";
+import { connectWithKey, disconnectLicensed, importLicensedCsv, LICENSED_SOURCES, refreshWithKey, type LicensedKey } from "@/lib/sources/licensed";
 import { forgetBrand } from "@/app/current-brand";
 
 export type Result = { ok: boolean; message: string };
@@ -44,12 +44,38 @@ export async function uploadLicensed(brandId: string, key: LicensedKey, _prev: R
   const file = form.get("file");
   if (!(file instanceof File) || !file.size) return { ok: false, message: "Choose a CSV file first." };
   if (file.size > MAX_BYTES) return { ok: false, message: "That file is over 900 KB. Split it into smaller exports." };
-  if (!LICENSED_SOURCES.some((s) => s.key === key)) return { ok: false, message: "Unknown source." };
+  if (!LICENSED_SOURCES.some((s) => s.key === key && s.connect === "upload")) return { ok: false, message: "Unknown source." };
   try {
     const { rows, skipped } = await importLicensedCsv(brandId, key, await file.text());
     refresh();
     return { ok: true, message: `Imported ${rows} rows${skipped ? ` (skipped ${skipped} without a title)` : ""}. Only your brand sees them.` };
   } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+// API-key sources (e.g. Perplexity): the key is checked with the provider before it's saved.
+export async function connectKey(brandId: string, key: LicensedKey, _prev: Result, form: FormData): Promise<Result> {
+  const apiKey = String(form.get("api_key") ?? "").trim();
+  if (!apiKey) return { ok: false, message: "Paste your API key first." };
+  if (!LICENSED_SOURCES.some((s) => s.key === key && s.connect === "api_key")) return { ok: false, message: "Unknown source." };
+  try {
+    const rows = await connectWithKey(brandId, key, apiKey);
+    refresh();
+    return { ok: true, message: `Connected. Pulled ${rows} fresh trends that only your brand sees.` };
+  } catch (e) {
+    refresh();
+    return { ok: false, message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export async function refreshKey(brandId: string, key: LicensedKey): Promise<Result> {
+  try {
+    const rows = await refreshWithKey(brandId, key);
+    refresh();
+    return { ok: true, message: `Refreshed: ${rows} trends.` };
+  } catch (e) {
+    refresh();
     return { ok: false, message: e instanceof Error ? e.message : String(e) };
   }
 }

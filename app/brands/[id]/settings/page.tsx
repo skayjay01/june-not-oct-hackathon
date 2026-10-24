@@ -5,11 +5,11 @@ import { connection } from "next/server";
 import { WEIGHT_DIMENSIONS } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
 import { DEFAULT_WEIGHTS } from "@/lib/engine/build-digest";
-import { LICENSED_SOURCES, licensedCounts } from "@/lib/sources/licensed";
+import { connections, LICENSED_SOURCES, licensedCounts } from "@/lib/sources/licensed";
 import type { WeightValues } from "@/components/weights-editor";
 import { loadPresets } from "@/app/ask/data";
-import { deleteBrand, disconnect, saveDelivery, saveWeights, uploadLicensed } from "./actions";
-import { DeleteBrand, DeliveryForm, LicensedSource, WeightsForm } from "./forms";
+import { connectKey, deleteBrand, disconnect, refreshKey, saveDelivery, saveWeights, uploadLicensed } from "./actions";
+import { DeleteBrand, DeliveryForm, KeySource, LicensedSource, WeightsForm } from "./forms";
 
 export const metadata = { title: "Settings · Ask-a-Trend" };
 
@@ -29,11 +29,12 @@ async function Settings({ params }: Pick<PageProps<"/brands/[id]/settings">, "pa
   const { id } = await params;
   await connection();
   if (!UUID.test(id)) notFound();
-  const [{ data: brand }, { data: weights }, presets, counts] = await Promise.all([
+  const [{ data: brand }, { data: weights }, presets, counts, conns] = await Promise.all([
     db().from("brands").select("id, name, email, slack_webhook_url, digest_channel, digest_frequency").eq("id", id).maybeSingle(),
     db().from("weights").select("*").eq("brand_id", id).maybeSingle(),
     loadPresets(),
     licensedCounts(id),
+    connections(id),
   ]);
   if (!brand) notFound();
   const w = (weights ?? DEFAULT_WEIGHTS) as WeightValues & { preset: string | null };
@@ -71,11 +72,23 @@ async function Settings({ params }: Pick<PageProps<"/brands/[id]/settings">, "pa
       <section className="flex flex-col gap-1 border-t border-zinc-200 pt-6 dark:border-zinc-800">
         <h2 className="text-xl font-semibold">Your paid trend sources</h2>
         <p className="text-sm text-zinc-500">
-          Already subscribe to one of these? Upload an export (CSV with a title column, plus any of category, color, price, link, image,
-          date, growth). It&apos;s added to your digests and dashboards and is visible to your brand only. We never share or resell it.
+          Already subscribe to one of these? Connect it with your own API key, or upload an export (CSV with a title column, plus any of
+          category, color, price, link, image, date, growth). It&apos;s added to your digests and dashboards and is visible to your brand only. We never share or resell it.
         </p>
         <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
-          {LICENSED_SOURCES.map((s) => (
+          {LICENSED_SOURCES.map((s) =>
+            s.connect === "api_key" ? (
+              <KeySource
+                key={s.key}
+                name={s.name}
+                help={s.keyHelp}
+                count={counts[s.key] ?? 0}
+                connection={conns[s.key] ?? null}
+                connect={connectKey.bind(null, id, s.key)}
+                refreshNow={refreshKey.bind(null, id, s.key)}
+                disconnect={disconnect.bind(null, id, s.key)}
+              />
+            ) : (
             <LicensedSource
               key={s.key}
               name={s.name}
@@ -84,7 +97,8 @@ async function Settings({ params }: Pick<PageProps<"/brands/[id]/settings">, "pa
               upload={uploadLicensed.bind(null, id, s.key)}
               disconnect={disconnect.bind(null, id, s.key)}
             />
-          ))}
+            ),
+          )}
         </ul>
       </section>
 

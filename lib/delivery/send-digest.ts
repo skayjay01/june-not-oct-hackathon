@@ -1,12 +1,15 @@
 import "server-only";
+import nodemailer from "nodemailer";
 import type { DigestSpec } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
 import { renderEmail, renderSlack, renderText } from "./render";
 
 // Contract function (tasks/build-plan.md): sendDigest(brandId, digest, channel) delivers by
-// email (Resend), Slack (the brand's incoming webhook) or WhatsApp (Meta's test number, demo only).
+// email (Gmail or Resend), Slack (the brand's incoming webhook) or WhatsApp (Meta's test number, demo only).
 //
 // Server-only env vars:
+//   GMAIL_ADDRESS, GMAIL_APP_PASSWORD   email from that Gmail account (an app password, not the login
+//                                       password); used instead of Resend when both are set
 //   RESEND_API_KEY, DIGEST_FROM_EMAIL   email; without a verified domain Resend only delivers to the
 //                                       Resend account's own address, from onboarding@resend.dev
 //   WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TO   Meta Cloud API test number (≤5 recipients)
@@ -17,10 +20,21 @@ export class DeliveryError extends Error {}
 
 const TIMEOUT = AbortSignal.timeout.bind(AbortSignal, 15_000);
 
+async function sendGmail(user: string, pass: string, to: string, mail: { subject: string; html: string; text: string }) {
+  const transport = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass }, connectionTimeout: 15_000, socketTimeout: 15_000 });
+  try {
+    await transport.sendMail({ from: { name: "Ask-a-Trend", address: user }, to, ...mail });
+  } catch (e) {
+    throw new DeliveryError(`Email failed (Gmail): ${e instanceof Error ? e.message.slice(0, 200) : String(e)}`);
+  }
+}
+
 async function sendEmail(to: string, d: DigestSpec & { id: string }, brandName: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new DeliveryError("Email isn't set up yet: RESEND_API_KEY is missing.");
   const { subject, html, text } = renderEmail(d, brandName);
+  const { GMAIL_ADDRESS: gmail, GMAIL_APP_PASSWORD: gmailPass } = process.env;
+  if (gmail && gmailPass) return sendGmail(gmail, gmailPass, to, { subject, html, text });
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new DeliveryError("Email isn't set up yet: set GMAIL_ADDRESS and GMAIL_APP_PASSWORD, or RESEND_API_KEY.");
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
