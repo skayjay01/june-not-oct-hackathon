@@ -35,7 +35,7 @@ export function ProfileEditor({
         ),
       )}
 
-      <Field label="Summary" htmlFor="summary" hint={edited.has("summary") ? "Edited by you" : "Written by the AI from your site's text"}>
+      <Field label="Summary" htmlFor="summary" hint={edited.has("summary") ? "Edited by you" : "Written by the AI from what we read about you"}>
         <textarea id="summary" name="summary" defaultValue={profile.summary ?? ""} rows={4} className={inputClass} />
       </Field>
 
