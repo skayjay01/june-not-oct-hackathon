@@ -189,6 +189,8 @@ The crawler plays by the rules: it follows each site's crawler instructions, goe
 
 The live and preview sites already have all three set in Vercel.
 
+**Running it on Replit (second host):** in Replit choose Create → Import from GitHub, connect GitHub and pick `skayjay01/june-not-oct-hackathon`. Add the three settings above under Tools → Secrets, plus `SITE_URL` set to the Replit address (so links in emails point back to Replit). Press Run to preview, or Deploy → Autoscale to publish. The daily digest email only runs from Vercel, so it isn't sent twice.
+
 ## Team
 
 | | GitHub | Builds |

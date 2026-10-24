@@ -7,7 +7,7 @@ Hackathon project with two teammates, who have access to this project's resource
 
 ## Stack
 
-Build on Next.js (App Router) + TypeScript, hosted on Vercel, with Supabase for the database. Never introduce another host or database. Read Supabase settings only from the three env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (browser-safe) and `SUPABASE_SECRET_KEY` (server only, never imported into client code). Never commit env files or keys. Setup steps for a new machine are in `README.md` under "Getting set up".
+Build on Next.js (App Router) + TypeScript, hosted on Vercel (primary) and Replit (secondary, configured by `.replit`), with Supabase for the database. Never introduce another host or database; scheduled jobs run only on Vercel. Read Supabase settings only from the three env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (browser-safe) and `SUPABASE_SECRET_KEY` (server only, never imported into client code). Never commit env files or keys. Setup steps for a new machine are in `README.md` under "Getting set up".
 
 ## Resources
 
