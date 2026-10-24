@@ -8,8 +8,6 @@ import { WeightsEditor, type Preset, type WeightValues } from "@/components/weig
 import { saveWeights } from "@/app/brands/[id]/settings/actions";
 import { loadEvidence, loadWeights, rerank } from "./actions";
 
-type Brand = { id: string; name: string };
-
 type View = {
   question: string;
   title: string;
@@ -26,19 +24,16 @@ type View = {
 const empty = (question: string): View => ({ question, title: "", summary: "", widgets: [], pendingIds: [], spec: null, notice: null, error: null, cached: false, seconds: null });
 
 export function AskClient({
-  brands,
-  initialBrand,
+  brandId,
   initialQuestion,
   examples,
   presets,
 }: {
-  brands: Brand[];
-  initialBrand: string;
+  brandId: string;
   initialQuestion: string;
   examples: string[];
   presets: Preset[];
 }) {
-  const [brandId, setBrandId] = useState(initialBrand);
   const [question, setQuestion] = useState(initialQuestion);
   const [followUp, setFollowUp] = useState("");
   const [view, setView] = useState<View | null>(null);
@@ -95,11 +90,11 @@ export function AskClient({
 
   // Arriving from the home page with ?q=…: start right away.
   useEffect(() => {
-    if (!started.current && initialQuestion && initialBrand) {
+    if (!started.current && initialQuestion) {
       started.current = true;
       void ask(initialQuestion);
     }
-  }, [ask, initialBrand, initialQuestion]);
+  }, [ask, initialQuestion]);
 
   const pick = useCallback(
     async (ids: number[], label: string) => {
@@ -119,18 +114,6 @@ export function AskClient({
         }}
         className="flex flex-col gap-3"
       >
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <label htmlFor="brand" className="text-zinc-500">
-            For
-          </label>
-          <select id="brand" value={brandId} onChange={(e) => setBrandId(e.target.value)} className={`${inputClass} w-auto py-1.5`}>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
         <textarea
           aria-label="Your trend question"
           value={question}

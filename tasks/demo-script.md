@@ -8,9 +8,9 @@ Five beats, all on pages that are already loaded, so nothing waits on the AI or 
 
 | Tab | Page | How to get there |
 |---|---|---|
-| 1 | **Damson Madder** brand page, scrolled to *Your style profile* | Home → Brands → Damson Madder |
+| 1 | **Damson Madder** brand page, scrolled to *Your style profile* | Open `/brands/aafb63b4-e6d8-41c6-80b2-24f5da161189` (home shows only this browser's own brand; add `/use` to that link to make Damson Madder it) |
 | 2 | A **Damson Madder digest**, web view | Tab 1 → *Send test digest now* → *View it* (do this before you go on) |
-| 3 | **Massimo Dutti** · *Which prints should we add for fall?* dashboard, fully loaded | Home → question box → brand Massimo Dutti → that example |
+| 3 | **Massimo Dutti** · *Which prints should we add for fall?* dashboard, fully loaded | Open `/brands/bf10ff1f-a3e0-4a23-ad19-5989eb5f7102` → *Ask a trend question* → that example |
 
 **Morning-of checklist**
 
