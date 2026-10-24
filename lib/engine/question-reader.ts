@@ -103,7 +103,7 @@ The dashboard can answer questions about fashion trends: which colors, silhouett
 
 These are in scope: questions about an upcoming season ("spring 2027", "next fall"), because runway and early signals answer them; and questions asking whether the brand should act on a trend ("should we lean green or orange?", "should we do a team collab?", "is it worth adding prints?"), because the dashboard shows the evidence for that decision; and "how big is this trend or moment?", because search interest, product counts and growth measure a trend's size. Merch, caps, jerseys and brand or team collaborations are fashion products.
 
-Set in_scope to false only when the question is not about fashion trends (weather, stocks, coding, general chat), or asks for something the dashboard cannot do: predicting sales, revenue or demand figures, a competitor's revenue or private numbers, designing or generating images, writing marketing copy, or legal, financial or business advice that is not about a trend. When in_scope is false, set suggestion to one short question the dashboard can answer that stays close to what the user wanted; otherwise set suggestion to null.
+Set in_scope to false only when the question is not about fashion trends (weather, stocks, coding, general chat), or asks for something the dashboard cannot do: predicting sales, revenue or demand figures, a competitor's revenue or private numbers, designing or generating images, writing marketing copy, or legal, financial or business advice that is not about a trend. When in_scope is false, set suggestion to one short question the dashboard can answer that stays close to what the user wanted, and set aside to one warm, witty sentence (under 30 words) that picks up a specific detail of what they asked and pivots to the trend angle we can answer: playful, never mean, no apology, no emoji. Otherwise set suggestion and aside to null.
 
 Use only these ids. Leave a list empty if the question names none.
 style_tags: ${list(v.styleTags)}
@@ -136,7 +136,8 @@ export function normalizeIntent(raw: unknown, opts: Pick<ReadOptions, "vocab" | 
 
   if (!inScope) {
     const suggestion = typeof r.suggestion === "string" && r.suggestion.trim() ? r.suggestion.trim() : null;
-    return outOfScope(opts, suggestion);
+    const aside = typeof r.aside === "string" && r.aside.trim() && r.aside.length <= 240 ? r.aside.trim() : null;
+    return outOfScope(opts, suggestion, aside);
   }
   return {
     in_scope: true,
@@ -167,10 +168,11 @@ export function checkIntent(i: QuestionIntent, vocab: QuestionVocab): string[] {
   return errs;
 }
 
-function outOfScope(opts: Pick<ReadOptions, "vocab" | "profile">, suggestion: string | null): QuestionIntent {
+function outOfScope(opts: Pick<ReadOptions, "vocab" | "profile">, suggestion: string | null, aside: string | null = null): QuestionIntent {
   return {
     in_scope: false,
     suggestion: suggestion ?? defaultSuggestion(opts),
+    aside,
     style_tags: [],
     categories: [],
     colors: [],
@@ -181,6 +183,19 @@ function outOfScope(opts: Pick<ReadOptions, "vocab" | "profile">, suggestion: st
     emphasis: [],
     time_window_days: DEFAULT_WINDOW_DAYS,
   };
+}
+
+/** Off-topic lines for when the AI can't write one; picked by the question so a retry reads the same. */
+const ASIDES = [
+  "Great question, wrong department: we read the runway, not the rest of the world.",
+  "We'd love to help with that, but our crystal ball only shows hemlines and colorways.",
+  "That's a little outside our closet. Here's something we can actually answer:",
+  "Our trend radar is tuned to fashion only, and that one flew under it.",
+];
+export function fallbackAside(question: string): string {
+  let h = 0;
+  for (const c of question) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return ASIDES[h % ASIDES.length];
 }
 
 /** A question the dashboard can always answer, pointed at the brand's own category when known. */
