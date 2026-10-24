@@ -3,14 +3,13 @@ import { cacheLife } from "next/cache";
 import { politeFetch } from "@/lib/sources/crawler";
 import { fetchShopifyProducts } from "@/lib/sources/shopify";
 
-// Pictures on the brand page, all taken from the brand's own official website: its product photos,
+// A row of pictures under the brand name, all taken from the brand's own official website: its product photos,
 // or, when the site has no public catalogue, the images on its home page.
 // Display only; the profiler still reads words, never images (FR-1).
 
 type Pic = { src: string; alt: string; link: string | null };
 
 const OWN = 6;
-const MORE = 8;
 
 // Home-page images that are logos, icons, payment badges or tracking pixels, not photos.
 const NOT_A_PHOTO = /logo|icon|sprite|favicon|badge|payment|pixel|placeholder|\.svg(\?|$)|\.gif(\?|$)/i;
@@ -21,7 +20,7 @@ async function sitePictures(websiteUrl: string): Promise<Pic[]> {
   const { products } = await fetchShopifyProducts(websiteUrl);
   const pics = products
     .filter((p) => p.imageUrl)
-    .slice(0, OWN + MORE)
+    .slice(0, OWN)
     .map((p) => ({ src: p.imageUrl!, alt: p.title, link: p.url }));
   if (pics.length) return pics;
 
@@ -53,13 +52,13 @@ async function sitePictures(websiteUrl: string): Promise<Pic[]> {
     if (!/^https?:/.test(src) || seen.has(src)) continue;
     seen.add(src);
     out.push({ src, alt: "", link: home.url });
-    if (out.length === OWN + MORE) break;
+    if (out.length === OWN) break;
   }
   return out;
 }
 
 export async function OwnGallery({ websiteUrl }: { websiteUrl: string }) {
-  const pics = (await sitePictures(websiteUrl)).slice(0, OWN);
+  const pics = await sitePictures(websiteUrl);
   if (!pics.length) return null;
   return (
     <div className={`grid gap-2 ${pics.length === 1 ? "grid-cols-1" : "grid-cols-3 sm:grid-cols-6"}`}>
@@ -74,29 +73,6 @@ export async function OwnGallery({ websiteUrl }: { websiteUrl: string }) {
           />
         </a>
       ))}
-    </div>
-  );
-}
-
-export async function MoreGallery({ websiteUrl }: { websiteUrl: string }) {
-  const pics = (await sitePictures(websiteUrl)).slice(OWN);
-  if (!pics.length) return null;
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold">More from your website</h2>
-        <p className="text-sm text-zinc-500">
-          Photos from {new URL(websiteUrl).hostname.replace(/^www\./, "")}. Tap one to open it on your site.
-        </p>
-      </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {pics.map((p) => (
-          <a key={p.src} href={p.link ?? undefined} target="_blank" rel="noreferrer" title={p.alt}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- remote store images on many hosts */}
-            <img src={p.src} alt={p.alt} loading="lazy" className="aspect-[4/5] w-full rounded-lg bg-zinc-100 object-cover dark:bg-zinc-800" />
-          </a>
-        ))}
-      </div>
     </div>
   );
 }
