@@ -29,9 +29,10 @@ function Welcome({ previous }: { previous: CurrentBrand | null }) {
         </p>
         {previous && (
           <p className="text-sm">
-            <Link href={`/brands/${previous.id}/use`} className="underline underline-offset-2">
+            {/* A full page load: /use sets the cookie and redirects, which a client-side Link wouldn't re-render. */}
+            <a href={`/brands/${previous.id}/use`} className="underline underline-offset-2">
               Back to {previous.name}
-            </Link>
+            </a>
           </p>
         )}
       </div>
