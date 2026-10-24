@@ -1,6 +1,6 @@
 # PRD: Ask-a-Trend — AI-Generated Fashion Trend Dashboards
 
-> **Status:** Draft v0.2 (2026-10-24). Built from the team's first two discussion transcripts (v0.2 adds: the question-to-dashboard flow, adjustable weights, latency, model and cost strategy, and data coverage). Will be revised once the full voice-to-text transcripts of all team conversations are added. Items marked **[ASSUMPTION]** are placeholders the team has not yet decided.
+> **Status:** Draft v0.3 (2026-10-24). Built from the team's first three discussion transcripts (v0.2 added the question-to-dashboard flow, adjustable weights, latency, model and cost strategy, and data coverage; v0.3 adds brand-style onboarding, the pushed inspiration feed, and new data sources). Will be revised once the full voice-to-text transcripts of all team conversations are added. Items marked **[ASSUMPTION]** are placeholders the team has not yet decided.
 
 ## 1. Introduction / Overview
 
@@ -22,6 +22,13 @@ Today brands do this research in one of two ways:
 5. **Design** — a design step (the AI applying a design skill / style guide) lays out and styles the dashboard so it looks polished rather than generic.
 
 **Why a question-driven dashboard instead of a fixed one:** A static dashboard feels stale, and different brands care about very different segments (a small brand may only care about one style niche). Generating the view from the user's question fits each brand's niche and feels AI-native, which also makes for a stronger demo.
+
+**Second surface — a personalized trend feed pushed to the brand.** Beyond answering questions, the product learns each client brand's style and proactively sends it on-trend inspiration:
+
+1. **Onboard** — the client gives us its own website, Instagram and any other data sources it already uses.
+2. **Understand the brand** — we crawl the *text* on those pages (About Us, product descriptions, image alt text, Instagram captions) and have the AI write a brand-style profile. No image recognition: training a style-recognition image model is not hard, but the processing cost is too high, and text is usually enough.
+3. **Personalize** — the brand profile filters and ranks trends, so the client gets a company-specific view of what's trending *for their style*.
+4. **Push** — the system sends a regular digest by email, Slack or WhatsApp, without the client having to log in.
 
 **Positioning:** The product can *complement* a brand's existing in-house or outsourced research, or *replace* parts of that workflow (e.g., the manual first pass of scanning social media and competitor new arrivals).
 
@@ -131,6 +138,29 @@ Today brands do this research in one of two ways:
 - [ ] Non-rehearsed questions still go through the live AI path.
 - [ ] A latency log records, for every live request, the time spent in AI interpretation, data matching, dashboard assembly and design.
 
+### US-010: Onboard a brand and build its style profile
+**Description:** As a brand founder, I want to give the product my website and Instagram so it understands my brand's style without me describing it by hand.
+
+**Acceptance Criteria:**
+- [ ] An onboarding form accepts a brand name, website URL, Instagram handle, and optional extra source URLs.
+- [ ] The system crawls text only: About Us, product titles and descriptions, image alt text, and Instagram bio/captions.
+- [ ] The AI produces a brand-style profile: 3–5 style tags, typical price range, core categories, typical colors, and a one-paragraph summary.
+- [ ] The user can review and edit the profile before it is saved.
+- [ ] No images are downloaded or analyzed for style detection.
+- [ ] Typecheck/lint passes.
+- [ ] Verify in browser using dev-browser skill.
+
+### US-011: Receive a pushed inspiration digest
+**Description:** As a brand founder, I want on-trend inspiration matched to my style sent to my email or Slack so I collect design ideas without going looking for them.
+
+**Acceptance Criteria:**
+- [ ] The user picks a channel (email or Slack for the hackathon; WhatsApp later **[ASSUMPTION]**) and a frequency (daily or weekly).
+- [ ] Each digest names 2–4 trending elements relevant to the brand profile (e.g., "butter yellow", "barrel-leg denim"), each with a one-sentence explanation.
+- [ ] Each element includes 3–5 representative *finished-product images* from the dataset, with source links. No AI-generated images.
+- [ ] Color trends are named from a fixed color list, so color names stay consistent across digests (FR-20).
+- [ ] A "send test digest now" button exists for the demo.
+- [ ] Each digest has a one-click "useful / not useful" rating, used to test whether clients actually want this feature.
+
 ## 4. Functional Requirements
 
 - FR-1: The system must accept a free-text question of up to 500 characters.
@@ -150,6 +180,11 @@ Today brands do this research in one of two ways:
 - FR-15: Routine steps (interpreting the question, building the spec) must use a fast, low-cost model; the most expensive models are not used by default.
 - FR-16: The system must log per-step latency for every live request (US-009).
 - FR-17: Demo questions must be served from pre-generated dashboards (US-009).
+- FR-18: Brand style must be inferred from crawled text only (About Us, product descriptions, image alt text, Instagram captions), never from image recognition (US-010).
+- FR-19: The brand-style profile must be stored and used to filter and rank both dashboards and pushed digests for that brand.
+- FR-20: Color trends must be expressed using a fixed, predefined color list passed to the AI in the prompt; the AI picks from the list rather than inventing color names.
+- FR-21: Pushed digests must show real finished-product examples chosen by the AI as representative of a trend; the system does not generate new designs or images.
+- FR-22: The push system must support email and Slack at launch, built so WhatsApp can be added later.
 
 ## 5. Non-Goals (Out of Scope)
 
@@ -159,7 +194,9 @@ Today brands do this research in one of two ways:
 - No trend *forecasting* model (predicting future demand); v1 shows what the data says now and recently.
 - No supplier sourcing, ordering or supply-chain integration.
 - No user accounts, billing or team management for the hackathon build **[ASSUMPTION]**.
-- No AI-generated product images or designs.
+- No AI-generated product images or designs, and no fully generated design packs. Digests show real examples.
+- No image recognition or computer-vision style model. Style comes from text.
+- No fabric or pattern trend feeds in v1 unless a free or open third-party source is found (see Open Question 10). Finished-product images and colors come first.
 
 ## 6. Design Considerations
 
@@ -198,3 +235,6 @@ Today brands do this research in one of two ways:
 7. **Which AI accounts power the app:** check that the accounts used are allowed to serve an app used by other people. Paid API keys are built for this. Consumer chat subscriptions (e.g., ChatGPT Plus, Claude Pro/Max) generally are not, and company-paid credits may not be allowed for a non-company hackathon project. Confirm before launch.
 8. **Weights:** what are the industry-best-practice default weights, and which presets do we ship? Fixed weights are fine for the demo, but setting them for a commercial product is hard.
 9. **Pre-built vs. fully generated dashboards:** do we keep a library of dashboard templates that the AI picks from and fills in, or does the AI compose every dashboard from widgets? A template library is faster and more reliable; full generation covers more niche questions.
+10. **Fabric, pattern and color sources:** finished-product images are easy to source, but fabric, pattern and color-code trends usually need niche third-party data. Are there free or open sources? Known lead: **Première Vision Paris** (premierevision.com), which publishes fabric trend decoding. Add it to the source list.
+11. **Client-supplied sources:** what will clients realistically share (website, Instagram, competitor lists, internal sales data)? Do we need their permission in writing to crawl their accounts, and do Instagram's terms allow crawling captions?
+12. **Which surface leads the pitch:** the ask-a-question dashboard (more "AI-native", stronger live demo) or the pushed digest (likely more useful day to day for founder-led brands)? We could build both and test which one clients use more.
