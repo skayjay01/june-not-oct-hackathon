@@ -11,7 +11,7 @@ let instance: Switchboard | undefined;
 export function ai(): Switchboard {
   if (instance) return instance;
   instance = createSwitchboard({
-    accounts: loadAccountConfigs().map(toAccount),
+    accounts: loadAccountConfigs().map((c) => toAccount(c)),
     log: async (entry) => {
       await db().from("latency_log").insert(entry);
     },
