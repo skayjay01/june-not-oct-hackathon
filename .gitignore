@@ -7,3 +7,12 @@ dist/
 
 .claude/worktrees/
 .claude/.session-changes/
+
+# next.js / tooling
+/out/
+/coverage
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*

@@ -50,6 +50,19 @@ for (const [q, want] of demo) {
   expect(`demo: ${q}`, got.in_scope && diffs.length === 0 && checkIntent(got, vocab).length === 0, JSON.stringify({ diffs, got }));
 }
 
+// 1b. Blair's demo questions (data/curation/demo-set.md) stay in scope even without the AI.
+const blairDemo: [string, string][] = [
+  ["Should our spring 2027 dresses lean green or orange?", "color"],
+  ["Is butter yellow still rising, or has it peaked?", "color"],
+  ["Which prints should we add for fall?", "pattern"],
+  ["Is preppy tailoring coming back for spring 2027?", "general"],
+  ["How big is the sports-merch moment, and should we do a team collab?", "general"],
+];
+for (const [q, focus] of blairDemo) {
+  const got = readByKeywords(q, opts);
+  expect(`demo-set: ${q}`, got.in_scope && got.focus === focus && checkIntent(got, vocab).length === 0, JSON.stringify(got));
+}
+
 // 2. Off-topic or unsupported → out of scope with a suggestion.
 const offTopic = [
   "What's the weather in Boston tomorrow?",

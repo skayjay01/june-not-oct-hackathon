@@ -9,14 +9,13 @@ export const CANDIDATE_LIMIT = 2000;
 
 /** The slice of the supabase-js query builder used here (keeps this file free of the dependency). */
 interface Query extends PromiseLike<{ data: unknown[] | null; error: { message: string } | null }> {
-  select(columns: string): Query;
   or(filter: string): Query;
   gte(column: string, value: string): Query;
   order(column: string, opts: { ascending: boolean }): Query;
   limit(n: number): Query;
 }
 export interface TrendDb {
-  from(table: "trend_items"): Query;
+  from(table: "trend_items"): { select(columns: string): Query };
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
