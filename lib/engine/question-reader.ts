@@ -197,12 +197,13 @@ function asWindow(v: unknown): number {
 // ---------- keyword fallback (no AI) ----------
 
 const FASHION_WORDS =
-  /\b(trend\w*|colou?rs?|palette|shades?|silhouettes?|fabrics?|materials?|textiles?|prints?|patterns?|styles?|aesthetics?|looks?|outfits?|wear|fashion|apparel|clothing|garments?|collections?|season\w*|spring|summer|fall|autumn|winter|resort|cuts?|fits?|denim|linen|silk|wool|cotton|knit\w*|leather|sneakers?|shoes?|bags?|accessor\w+|jewel\w+)\b/i;
+  /\b(trend\w*|colou?rs?|palette|shades?|silhouettes?|fabrics?|materials?|textiles?|prints?|patterns?|styles?|aesthetics?|looks?|outfits?|wear|fashion|apparel|clothing|garments?|collections?|season\w*|spring|summer|fall|autumn|winter|resort|cuts?|fits?|denim|linen|silk|wool|cotton|knit\w*|leather|sneakers?|shoes?|bags?|caps?|hats?|beanies?|jerseys?|accessor\w+|jewel\w+|merch\w*|collabs?|collaborations?|drops?|tailor\w*|preppy|streetwear|runway|catwalk)\b/i;
+const COLOR_WORDS = /\b(colou?rs?|shades?|palette|hues?|red|orange|yellow|green|blue|navy|pink|purple|lilac|brown|beige|cream|white|black|gr[ae]y|neutrals?|pastels?)\b/i;
 const UNSUPPORTED =
   /\b(forecast\w*|predict\w*|next (year|season)'?s? (sales|demand|revenue)|revenue|profit|stock price|design (me|a|an)|generate (an? )?(image|picture|logo|design)|draw|write (a|an|me) |legal|lawyer|weather)\b/i;
 
 const FOCUS_WORDS: [QuestionIntent["focus"], RegExp][] = [
-  ["color", /\b(colou?rs?|shades?|palette|hues?)\b/i],
+  ["color", COLOR_WORDS],
   ["silhouette", /\b(silhouettes?|shapes?|cuts?|fits?|lengths?)\b/i],
   ["material", /\b(fabrics?|materials?|textiles?|linen|silk|wool|cotton|denim|leather)\b/i],
   ["pattern", /\b(patterns?|prints?|stripes?|florals?|plaid|polka)\b/i],
@@ -227,7 +228,7 @@ export function readByKeywords(q: string, opts: Pick<ReadOptions, "vocab" | "pro
   const categories = unique(mentioned(vocab.categories));
   const colors = mentioned(vocab.colors);
 
-  const fashion = FASHION_WORDS.test(q) || styleTags.length > 0 || categories.length > 0 || colors.length > 0;
+  const fashion = FASHION_WORDS.test(q) || COLOR_WORDS.test(q) || styleTags.length > 0 || categories.length > 0 || colors.length > 0;
   if (!fashion || UNSUPPORTED.test(q)) return outOfScope(opts, null);
 
   const { min, max } = priceRange(q);
