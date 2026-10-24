@@ -7,6 +7,7 @@ import { db } from "@/lib/db/server";
 import { engine } from "@/lib/engine";
 import { socialFromUrl, socialLink } from "@/lib/engine/brand-finder";
 import { runOnboarding } from "@/lib/sources/onboard-brand";
+import { rememberBrand } from "@/app/current-brand";
 
 export type OnboardState = { errors: Record<string, string>; values: Record<string, string> };
 
@@ -98,5 +99,6 @@ export async function createBrand(_prev: OnboardState, form: FormData): Promise<
   }
 
   after(() => runOnboarding(brand.id));
+  await rememberBrand(brand.id);
   redirect(`/brands/${brand.id}`);
 }

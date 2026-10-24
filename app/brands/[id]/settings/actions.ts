@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { checkWeights, WEIGHT_DIMENSIONS, type Weights } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
 import { disconnectLicensed, importLicensedCsv, LICENSED_SOURCES, type LicensedKey } from "@/lib/sources/licensed";
+import { forgetBrand } from "@/app/current-brand";
 
 export type Result = { ok: boolean; message: string };
 
@@ -67,5 +68,6 @@ export async function deleteBrand(brandId: string, _prev: Result, form: FormData
   if (String(form.get("confirm") ?? "").trim() !== brand.name) return { ok: false, message: `Type the brand name exactly to confirm: ${brand.name}` };
   const { error: delError } = await db().from("brands").delete().eq("id", brandId);
   if (delError) return { ok: false, message: delError.message };
+  await forgetBrand(brandId);
   redirect("/");
 }

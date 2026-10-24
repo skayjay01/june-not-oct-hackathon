@@ -1,7 +1,6 @@
 import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { db } from "@/lib/db/server";
 import type { Preset } from "@/components/weights-editor";
 
 // Example questions: Blair's demo questions (data/curation/demo-set.md, "### 1. …" headings).
@@ -15,12 +14,6 @@ export async function exampleQuestions(): Promise<string[]> {
   } catch {
     return FALLBACK;
   }
-}
-
-/** Brands that have a style profile; answers are matched to one of them. */
-export async function brandsWithProfiles(): Promise<{ id: string; name: string }[]> {
-  const { data } = await db().from("brands").select("id, name, brand_profiles!inner(brand_id)").order("name");
-  return (data ?? []).map((b) => ({ id: b.id as string, name: b.name as string }));
 }
 
 /** Blair's weight presets (data/curation/presets.json, C5), each with its one-line reason. */

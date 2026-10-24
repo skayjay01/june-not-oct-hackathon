@@ -3,27 +3,29 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-// The header on every screen. When the screen is about one brand (its page, its settings, or a
-// question asked for it), it also links straight to that brand's settings.
+// The header on every screen. It's about one brand: the one on screen (its page, its settings, or a
+// question asked for it), else this browser's own. No brand yet → just the logo; home is the sign-up form.
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function currentBrand(pathname: string, brandParam: string | null) {
+function brandOnScreen(pathname: string, brandParam: string | null) {
   const fromPath = pathname.match(/^\/brands\/([^/]+)/)?.[1];
   const id = fromPath ?? (pathname === "/ask" ? brandParam : null);
   return id && UUID.test(id) ? id : null;
 }
 
-export function SiteNav() {
+export function SiteNav({ ownBrand }: { ownBrand: string | null }) {
   const pathname = usePathname();
-  const brand = currentBrand(pathname, useSearchParams().get("brand"));
+  const onScreen = brandOnScreen(pathname, useSearchParams().get("brand"));
+  const brand = onScreen ?? ownBrand;
 
-  const links = [
-    { href: "/", label: "Brands", active: pathname === "/" || (pathname.startsWith("/brands/") && !pathname.endsWith("/settings")) },
-    { href: brand ? `/ask?brand=${brand}` : "/ask", label: "Ask", active: pathname === "/ask" },
-    ...(brand ? [{ href: `/brands/${brand}/settings`, label: "Weights & settings", active: pathname === `/brands/${brand}/settings` }] : []),
-    { href: "/sources", label: "Sources", active: pathname === "/sources" },
-  ];
+  const links = brand
+    ? [
+        { href: `/brands/${brand}`, label: "Your brand", active: pathname === `/brands/${brand}` },
+        { href: onScreen && onScreen !== ownBrand ? `/ask?brand=${brand}` : "/ask", label: "Ask", active: pathname === "/ask" },
+        { href: `/brands/${brand}/settings`, label: "Weights & settings", active: pathname === `/brands/${brand}/settings` },
+      ]
+    : [];
 
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-800">
@@ -41,12 +43,6 @@ export function SiteNav() {
             {l.label}
           </Link>
         ))}
-        <Link
-          href="/onboard"
-          className="inline-flex h-8 items-center rounded-lg bg-zinc-900 px-3 font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        >
-          Add brand
-        </Link>
       </nav>
     </header>
   );
