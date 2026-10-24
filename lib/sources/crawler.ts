@@ -60,7 +60,8 @@ async function rawFetch(url: string): Promise<FetchResult> {
   };
 }
 
-export async function politeFetch(url: string): Promise<FetchResult> {
+/** minDelayMs: a longer gap between requests to this host, for APIs that ask for one. */
+export async function politeFetch(url: string, { minDelayMs = MIN_DELAY_MS }: { minDelayMs?: number } = {}): Promise<FetchResult> {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -75,7 +76,7 @@ export async function politeFetch(url: string): Promise<FetchResult> {
   if (robots.isDisallowed(url, USER_AGENT)) return { ok: false, url, reason: "disallowed by robots.txt" };
 
   const crawlDelayMs = (robots.getCrawlDelay(USER_AGENT) ?? 0) * 1000;
-  const delay = Math.max(MIN_DELAY_MS, crawlDelayMs);
+  const delay = Math.max(MIN_DELAY_MS, minDelayMs, crawlDelayMs);
   await waitTurn(parsed.host, delay);
 
   try {

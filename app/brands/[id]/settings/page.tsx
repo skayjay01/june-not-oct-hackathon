@@ -6,6 +6,7 @@ import { WEIGHT_DIMENSIONS } from "@/lib/contracts";
 import { db } from "@/lib/db/server";
 import { DEFAULT_WEIGHTS } from "@/lib/engine/build-digest";
 import { connections, LICENSED_SOURCES, licensedCounts } from "@/lib/sources/licensed";
+import { PartnerStrip } from "@/components/partner-strip";
 import type { WeightValues } from "@/components/weights-editor";
 import { loadPresets } from "@/app/ask/data";
 import { connectKey, deleteBrand, disconnect, refreshKey, saveDelivery, saveWeights, uploadLicensed } from "./actions";
@@ -101,6 +102,8 @@ async function Settings({ params }: Pick<PageProps<"/brands/[id]/settings">, "pa
           )}
         </ul>
       </section>
+
+      <PartnerStrip />
 
       <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
         <div>
