@@ -1,6 +1,6 @@
 # PRD: Ask-a-Trend — AI-Generated Fashion Trend Dashboards
 
-> **Status:** Draft v0.1 (2026-10-24). Built from the team's first discussion notes. Will be revised once the full voice-to-text transcripts of all team conversations are added. Items marked **[ASSUMPTION]** are placeholders the team has not yet decided.
+> **Status:** Draft v0.2 (2026-10-24). Built from the team's first two discussion transcripts (v0.2 adds: the question-to-dashboard flow, adjustable weights, latency, model and cost strategy, and data coverage). Will be revised once the full voice-to-text transcripts of all team conversations are added. Items marked **[ASSUMPTION]** are placeholders the team has not yet decided.
 
 ## 1. Introduction / Overview
 
@@ -12,6 +12,14 @@ Today brands do this research in one of two ways:
 - **Outsourced.** Brands buy reports or consulting from third-party trend-research firms.
 
 **Ask-a-Trend** lets someone on a brand's team type a plain-language question (for example, *"What colors are gaining traction in women's summer dresses under $50?"*). An AI model interprets the question, pulls the relevant trend data, and **generates a dashboard built for that specific question** — charts, rankings and example images — instead of showing a fixed, one-size-fits-all dashboard.
+
+**How a question becomes a dashboard (end-to-end flow):**
+
+1. **Ask** — the user types a question.
+2. **Interpret** — the AI works out *which style/segment* the question is about (e.g., niche streetwear vs. high fashion) and *what the user cares about* (e.g., price range, color, silhouette, speed of growth).
+3. **Match** — the backend matches that interpretation against the trend database and scores results using the dimension weights for that user (see US-008).
+4. **Assemble** — the system builds the dashboard spec from the matched data.
+5. **Design** — a design step (the AI applying a design skill / style guide) lays out and styles the dashboard so it looks polished rather than generic.
 
 **Why a question-driven dashboard instead of a fixed one:** A static dashboard feels stale, and different brands care about very different segments (a small brand may only care about one style niche). Generating the view from the user's question fits each brand's niche and feels AI-native, which also makes for a stronger demo.
 
@@ -102,6 +110,27 @@ Today brands do this research in one of two ways:
 - [ ] Typecheck/lint passes.
 - [ ] Verify in browser using dev-browser skill.
 
+### US-008: Adjust how trends are weighted
+**Description:** As a user, I want to choose or tune how much each dimension (e.g., price range, social buzz, growth speed, competitor adoption) counts, so the results match what my kind of brand cares about.
+
+**Acceptance Criteria:**
+- [ ] Default weights follow industry best practice and are documented in the codebase, with a one-line reason for each.
+- [ ] A Settings page offers at least 3 presets **[ASSUMPTION — examples]**: "Price-sensitive / mass market", "Niche streetwear", "Fashion house / editorial (Vogue-style)".
+- [ ] The user can switch presets or move individual weight sliders; weights always add up to 100%.
+- [ ] Changing weights re-ranks the current dashboard without calling the AI again.
+- [ ] The dashboard shows which preset is active.
+- [ ] Typecheck/lint passes.
+- [ ] Verify in browser using dev-browser skill.
+
+### US-009: Fast, reliable demo questions
+**Description:** As a presenter, I want the rehearsed demo questions to load instantly so the live demo never stalls on AI or data latency.
+
+**Acceptance Criteria:**
+- [ ] Dashboards for the rehearsed demo questions are generated ahead of time and stored.
+- [ ] Asking a rehearsed question serves the stored dashboard in under 2 seconds.
+- [ ] Non-rehearsed questions still go through the live AI path.
+- [ ] A latency log records, for every live request, the time spent in AI interpretation, data matching, dashboard assembly and design.
+
 ## 4. Functional Requirements
 
 - FR-1: The system must accept a free-text question of up to 500 characters.
@@ -115,6 +144,12 @@ Today brands do this research in one of two ways:
 - FR-9: The system must support at least one follow-up question that modifies the current dashboard.
 - FR-10: The system must let a user save a dashboard and open it later via a link.
 - FR-11: The AI API key must stay on the server and never be sent to the browser.
+- FR-12: Results must be ranked using per-dimension weights, with an industry-best-practice default, selectable presets, and user-adjustable sliders (US-008).
+- FR-13: The system must support more than one AI provider (Gemini, OpenAI, Claude) behind a single internal interface, so the provider can be swapped by configuration.
+- FR-14: When the active AI account or key runs out of quota or errors, the system must automatically fail over to the next configured one without the user seeing an error.
+- FR-15: Routine steps (interpreting the question, building the spec) must use a fast, low-cost model; the most expensive models are not used by default.
+- FR-16: The system must log per-step latency for every live request (US-009).
+- FR-17: Demo questions must be served from pre-generated dashboards (US-009).
 
 ## 5. Non-Goals (Out of Scope)
 
@@ -137,7 +172,9 @@ Today brands do this research in one of two ways:
 
 - **Hosting:** Vercel project `june-not-oct-hackathon`, auto-deploys from this repo.
 - **Database:** the team's Supabase project (see `CLAUDE.md`).
-- **AI model:** Claude API **[ASSUMPTION]** — e.g. `claude-sonnet-5` for speed, using structured (JSON) output for the dashboard spec.
+- **AI model:** the founder already has Gemini, OpenAI and Claude API access, and the demo needs few tokens, so model choice is not the bottleneck — speed is. Default to a fast model such as Gemini 3.8 Flash for interpreting questions and building specs; reserve stronger models for cases that need them. Use structured (JSON) output for the dashboard spec.
+- **AI cost and accounts:** AI calls run on the founder's existing AI accounts (a few accounts, roughly a few hundred dollars a month of capacity, which is now ample). The backend holds several accounts and switches automatically when one runs out (FR-14). This follows a setup the founder already runs for an internal company "IT assistant" bot. See Open Question 7 on account terms.
+- **Latency is the main technical risk.** Total time = AI interpretation + data matching + dashboard assembly + design step. Measure each step (FR-16), pre-generate demo dashboards (FR-17), and consider streaming widgets onto the page as each one is ready.
 - **Safety:** the AI produces a *spec*, never code. The front end only renders known components; this prevents broken or unsafe output and keeps the look consistent.
 - **Data queries:** the AI should choose from predefined, parameterized queries (e.g., "top attributes by mention growth in category X over period Y") rather than writing free-form SQL. This keeps queries safe and fast.
 - **Performance:** cache AI responses for repeated identical questions so the live demo is fast and cheap.
@@ -152,9 +189,12 @@ Today brands do this research in one of two ways:
 
 ## 9. Open Questions
 
-1. **Data sources:** where does the trend data come from? Candidates: Google Trends, TikTok/Instagram/Pinterest hashtags and posts, competitor new-arrival pages (SHEIN, Zara, Cider), marketplace bestseller lists. What is legally and practically collectable before the hackathon?
+1. **Data sources — the #1 next task.** Dashboard coverage depends almost entirely on how rich the database is. If it only supports a dozen or so dashboards and a user asks something very specific or niche, there will be little to show. Finding enough sources to cover many use cases is the team's core next step. Where does the trend data come from? Candidates: Google Trends, TikTok/Instagram/Pinterest hashtags and posts, competitor new-arrival pages (SHEIN, Zara, Cider), marketplace bestseller lists. What is legally and practically collectable before the hackathon?
 2. **Target customer:** small founder-led brands (fast to sell, low budgets) or larger enterprise brands (bigger budgets, longer sales cycles)?
 3. **Complement or substitute:** do we pitch alongside existing trend consultants, or as a cheaper replacement for part of their work?
 4. **Demo questions:** which 5 questions will we rehearse? These decide which data we must collect.
 5. **Moat:** what is our long-term defensibility beyond the UI — proprietary data, the founder's industry network, or something else?
 6. **Hackathon logistics:** deadline, judging criteria and team roles (who owns data, AI, front end, pitch).
+7. **Which AI accounts power the app:** check that the accounts used are allowed to serve an app used by other people. Paid API keys are built for this. Consumer chat subscriptions (e.g., ChatGPT Plus, Claude Pro/Max) generally are not, and company-paid credits may not be allowed for a non-company hackathon project. Confirm before launch.
+8. **Weights:** what are the industry-best-practice default weights, and which presets do we ship? Fixed weights are fine for the demo, but setting them for a commercial product is hard.
+9. **Pre-built vs. fully generated dashboards:** do we keep a library of dashboard templates that the AI picks from and fills in, or does the AI compose every dashboard from widgets? A template library is faster and more reliable; full generation covers more niche questions.
