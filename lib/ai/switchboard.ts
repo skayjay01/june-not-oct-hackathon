@@ -7,6 +7,7 @@
 // - Logs how long each call took, per step (FR-20), and caches identical calls briefly.
 
 import { APICallError, generateText, jsonSchema, NoObjectGeneratedError, Output, type JSONSchema7 } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
 import type { Account, Provider } from "./accounts";
 
 /** Matches latency_log.step in supabase/migrations. */
@@ -24,6 +25,8 @@ export interface JsonCall<T> {
   timeoutMs?: number;
   /** skip the short-lived cache, e.g. for digests that should vary */
   noCache?: boolean;
+  /** let the model search the web up to this many times (Claude accounts only; others answer from what they know) */
+  webSearch?: number;
 }
 
 export interface Attempt {
@@ -119,7 +122,7 @@ export function createSwitchboard(opts: SwitchboardOptions) {
     const requestId = call.requestId ?? crypto.randomUUID();
     const started = now();
 
-    const key = call.noCache ? null : await hash(JSON.stringify([call.step, call.system, call.prompt, call.schema]));
+    const key = call.noCache ? null : await hash(JSON.stringify([call.step, call.system, call.prompt, call.schema, call.webSearch ?? 0]));
     if (key) {
       const hit = cache.get(key);
       if (hit && now() - hit.at < cacheTtl) return { ...(hit.result as JsonResult<T>), cached: true, ms: 0 };
@@ -140,6 +143,7 @@ export function createSwitchboard(opts: SwitchboardOptions) {
             maxRetries: 0, // the switchboard does the retrying, across accounts
             abortSignal: AbortSignal.timeout(call.timeoutMs ?? 45_000),
             providerOptions: SPEED_OPTIONS[account.provider] as never,
+            tools: call.webSearch && account.provider === "anthropic" ? { web_search: anthropic.tools.webSearch_20250305({ maxUses: call.webSearch }) } : undefined,
           });
           const value = res.output as T;
           const problems = call.validate?.(value) ?? [];
